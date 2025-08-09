@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zapatería Paso Firme | Calidad y Estilo</title>
+  <meta name="description" content="Zapatería Paso Firme: calzado para toda la familia. Encuentra zapatos de calidad, cómodos y con estilo." />
+  <!-- Open Graph / SEO -->
+  <meta property="og:title" content="Zapatería Paso Firme" />
+  <meta property="og:description" content="Calzado cómodo y de calidad para toda la familia." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://placehold.co/1200x630/png?text=Zapater%C3%ADa+Paso+Firme" />
+  <meta name="theme-color" content="#e63946" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23e63946'/%3E%3C/svg%3E" type="image/svg+xml">
+</head>
+<body>
+  <header class="header" id="inicio">
+    <nav class="nav container">
+      <a href="#inicio" class="logo" aria-label="Inicio - Paso Firme"><img src="assets/img/logo.svg" alt="Logo Paso Firme"></a>
+      <button class="nav__toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+      <ul class="nav__menu" id="navMenu" aria-label="Menú principal">
+        <li><a href="#inicio" class="nav__link">Inicio</a></li>
+        <li><a href="#productos" class="nav__link">Productos</a></li>
+        <li><a href="#nosotros" class="nav__link">Nosotros</a></li>
+        <li><a href="#opiniones" class="nav__link">Opiniones</a></li>
+        <li><a href="#contacto" class="nav__link cta">Contacto</a></li>
+      </ul>
+    </nav>
+
+    <section class="hero container">
+      <div class="hero__content">
+        <h1>Calzado que te acompaña en cada paso</h1>
+        <p>Confort, calidad y diseño para toda la familia. Descubre nuestras colecciones y camina con seguridad y estilo.</p>
+        <div class="hero__actions">
+          <a href="#productos" class="btn btn--primary">Ver colección</a>
+          <a href="#contacto" class="btn btn--outline">Hacer pedido</a>
+        </div>
+      </div>
+      <picture class="hero__image">
+        <source srcset="https://placehold.co/720x540/webp?text=Colecci%C3%B3n+de+Zapatos" type="image/webp">
+        <img src="https://placehold.co/720x540/png?text=Colecci%C3%B3n+de+Zapatos" alt="Colección de zapatos modernos" loading="lazy" />
+      </picture>
+    </section>
+  </header>
+
+  <main>
+    <section class="features container" aria-label="Beneficios">
+      <article class="feature">
+        <span class="feature__icon">👟</span>
+        <h3>Confort premium</h3>
+        <p>Plantillas acolchadas y materiales transpirables para un día sin cansancio.</p>
+      </article>
+      <article class="feature">
+        <span class="feature__icon">🧵</span>
+        <h3>Materiales de calidad</h3>
+        <p>Cuero y textiles resistentes, seleccionados para durar.</p>
+      </article>
+      <article class="feature">
+        <span class="feature__icon">🚚</span>
+        <h3>Envíos a todo el país</h3>
+        <p>Recibe tus zapatos donde estés, rápido y seguro.</p>
+      </article>
+    </section>
+
+    <section class="products" id="productos" aria-labelledby="productos-title">
+      <div class="container">
+        <h2 id="productos-title">Productos destacados</h2>
+        <div class="products__grid" id="productsGrid">
+          <!-- Productos generados por JS -->
+        </div>
+      </div>
+    </section>
+
+    <section class="about container" id="nosotros">
+      <div class="about__media">
+        <picture>
+          <source srcset="https://placehold.co/800x600/webp?text=Tienda+Zapater%C3%ADa" type="image/webp">
+          <img src="https://placehold.co/800x600/jpg?text=Tienda+Zapater%C3%ADa" alt="Interior de la zapatería Paso Firme" loading="lazy" />
+        </picture>
+      </div>
+      <div class="about__content">
+        <h2>Sobre nosotros</h2>
+        <p>Somos una zapatería familiar con más de 15 años ofreciendo calzado cómodo, moderno y de gran calidad. Trabajamos con marcas reconocidas y también con producción local.</p>
+        <ul class="about__list">
+          <li>Atención personalizada</li>
+          <li>Tallas para niños, mujeres y hombres</li>
+          <li>Garantía de satisfacción</li>
+        </ul>
+        <a href="#contacto" class="btn btn--primary">Contáctanos</a>
+      </div>
+    </section>
+
+    <section class="testimonials" id="opiniones">
+      <div class="container">
+        <h2>Lo que dicen nuestros clientes</h2>
+        <div class="testimonials__slider" id="testimonialSlider" aria-live="polite">
+          <!-- Opiniones generadas por JS -->
+        </div>
+      </div>
+    </section>
+
+    <section class="contact" id="contacto" aria-labelledby="contact-title">
+      <div class="container contact__grid">
+        <div>
+          <h2 id="contact-title">Contáctanos</h2>
+          <p>¿Tienes preguntas o quieres realizar un pedido? Escríbenos y te responderemos pronto.</p>
+          <ul class="contact__info">
+            <li>📍 5a Av. 10-25, Zona 1, Ciudad de Guatemala</li>
+            <li>☎️ <a href="tel:+50255555555">+502 5555-5555</a></li>
+            <li>✉️ <a href="mailto:contacto@pasofirme.com">contacto@pasofirme.com</a></li>
+            <li>🕒 Lun - Sáb: 9:00 - 19:00</li>
+          </ul>
+          <iframe class="contact__map" title="Mapa Paso Firme" loading="lazy" allowfullscreen
+            src="https://www.google.com/maps?q=5a%20Av.%2010-25,%20Zona%201,%20Ciudad%20de%20Guatemala&output=embed"></iframe>
+        </div>
+        <form class="form" id="contactForm" novalidate>
+          <div class="form__field">
+            <label for="name">Nombre</label>
+            <input id="name" name="name" type="text" placeholder="Tu nombre" required>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="form__field">
+            <label for="email">Correo</label>
+            <input id="email" name="email" type="email" placeholder="tucorreo@ejemplo.com" required>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="form__field">
+            <label for="message">Mensaje</label>
+            <textarea id="message" name="message" rows="4" placeholder="¿En qué podemos ayudarte?" required></textarea>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <button type="submit" class="btn btn--primary">Enviar</button>
+          <p class="form__success" role="status" hidden>¡Gracias! Hemos recibido tu mensaje.</p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div>
+        <a href="#inicio" class="logo">Paso Firme</a>
+        <p>Calzado de calidad para cada paso de tu vida.</p>
+      </div>
+      <ul class="footer__links">
+        <li><a href="#productos">Productos</a></li>
+        <li><a href="#nosotros">Nosotros</a></li>
+        <li><a href="#opiniones">Opiniones</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+      </ul>
+      <div class="footer__social">
+        <a href="#" aria-label="Facebook" title="Facebook">📘</a>
+        <a href="#" aria-label="Instagram" title="Instagram">📸</a>
+        <a href="#" aria-label="WhatsApp" title="WhatsApp">💬</a>
+      </div>
+    </div>
+    <div class="footer__copy">© <span id="year"></span> Paso Firme. Todos los derechos reservados.</div>
+  </footer>
+
+  <button class="back-to-top" id="backToTop" aria-label="Volver arriba">↑</button>
+  <button class="whatsapp-float" id="waButton" aria-label="Chatear por WhatsApp">🟢</button>
+
+  <script src="./assets/js/data.js" defer></script>
+  <script src="./assets/js/main.js" defer></script>
+</body>
+</html>
