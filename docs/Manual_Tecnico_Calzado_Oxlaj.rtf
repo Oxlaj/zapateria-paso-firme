@@ -1,0 +1,50 @@
+{\rtf1\ansi\deff0{\fonttbl{\f0 Arial;}}\fs22
+\b Manual Técnico - Calzado Oxlaj\b0\line
+\line
+\b 1. Descripción general\b0\line
+Sitio estático en HTML5, CSS3 y JavaScript (vanilla) para la zapatería Calzado Oxlaj.\line
+\line
+\b 2. Estructura del proyecto\b0\line
+- index.html\line
+- assets/ css/styles.css, js/data.js, js/main.js, img/\line
+- netlify.toml\line
+\line
+\b 3. Requisitos\b0\line
+- Git 2.x, VS Code (sugerido) con Live Server (opcional), Navegador moderno.\line
+\line
+\b 4. Arquitectura y responsabilidades\b0\line
+- index.html: marcado semántico, secciones Hero/Productos/Nosotros/Opiniones/Contacto/Footer.\line
+- assets/css/styles.css: variables CSS (paleta azul marino), layout responsive, componentes.\line
+- assets/js/data.js: arreglo PRODUCTS (catálogo) y TESTIMONIALS.\line
+- assets/js/main.js: menú responsive, render catálogo, validación, WhatsApp, back-to-top, año dinámico.\line
+\line
+\b 5. Variables de tema (styles.css)\b0\line
+- --primary: #0b3d91\line
+- --primary-600: #092f6b\line
+Puedes ajustar tipografías y contenedor en :root.\line
+\line
+\b 6. Datos del catálogo (data.js)\b0\line
+Estructura de producto: { id: number, title: string, price: number, img: string, tags: string[] }.\line
+Para usar imágenes propias: coloca archivos en assets/img/ y usa rutas relativas (p.ej. assets/img/oxford.jpg).\line
+\line
+\b 7. Flujo del formulario y WhatsApp (main.js)\b0\line
+- Validación básica de nombre, email y mensaje.\line
+- Si es válido, abre wa.me con mensaje preformateado. Cambia WA_NUMBER por tu número internacional.\line
+\line
+\b 8. Accesibilidad\b0\line
+- aria-labels, aria-live, etiquetas adecuadas y contraste con tema.\line
+\line
+\b 9. Despliegue\b0\line
+- Netlify: publish = ".". Sin build.\line
+\line
+\b 10. Desarrollo local\b0\line
+- Abrir index.html o usar Live Server.\line
+- Alternativa: python -m http.server 5500 y abrir http://localhost:5500\line
+\line
+\b 11. GitHub (flujo)\b0\line
+- Primer push (ya hecho). Cambios: git add ., git commit -m "mensaje", git push origin main.\line
+\line
+\b 12. Netlify (flujo)\b0\line
+- Import from Git: GitHub -> repo -> build: (vacío), publish: "." -> Deploy.\line
+- En cada push se redeploya automáticamente.\line
+}

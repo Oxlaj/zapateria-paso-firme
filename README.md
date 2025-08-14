@@ -1,5 +1,7 @@
 # Calzado Oxlaj (sitio estático)
 
+[Descargar Manual Técnico (RTF)](docs/Manual_Tecnico_Calzado_Oxlaj.rtf) · [Descargar Manual de Usuario (RTF)](docs/Manual_de_Usuario_Calzado_Oxlaj.rtf)
+
 Sitio web estático en HTML5, CSS3 y JavaScript para una zapatería.
 
 ## Estructura
@@ -10,6 +12,7 @@ Sitio web estático en HTML5, CSS3 y JavaScript para una zapatería.
   - js/main.js
   - img/
 - netlify.toml (configuración de despliegue)
+- docs/ (manuales)
 
 ## Ver el sitio
 - Opción rápida: abre `index.html` en tu navegador.
