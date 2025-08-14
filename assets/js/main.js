@@ -39,7 +39,15 @@ function createProductCard(p) {
 function renderProducts() {
   if (!productsGrid) return;
   productsGrid.innerHTML = '';
-  PRODUCTS.forEach(p => productsGrid.appendChild(createProductCard(p)));
+  const sorted = PRODUCTS.map((p, i) => ({ p, i }))
+    .sort((a, b) => {
+      const aLocal = String(a.p.img || '').startsWith('assets/img/catalogo/');
+      const bLocal = String(b.p.img || '').startsWith('assets/img/catalogo/');
+      if (aLocal !== bLocal) return aLocal ? -1 : 1;
+      return a.i - b.i; // orden estable para el resto
+    })
+    .map(x => x.p);
+  sorted.forEach(p => productsGrid.appendChild(createProductCard(p)));
   updateFavButtons();
 }
 
