@@ -1,50 +1,77 @@
 {\rtf1\ansi\deff0{\fonttbl{\f0 Arial;}}\fs22
 \b Manual Técnico - Calzado Oxlaj\b0\line
+Versión: 1.1 \tab Fecha: 2025-08-13\line
 \line
 \b 1. Descripción general\b0\line
-Sitio estático en HTML5, CSS3 y JavaScript (vanilla) para la zapatería Calzado Oxlaj.\line
+Sitio estático en HTML5, CSS3 y JavaScript (vanilla) para la zapatería Calzado Oxlaj. Incluye catálogo, testimonios, contacto y flujo de pedido por WhatsApp.\line
 \line
 \b 2. Estructura del proyecto\b0\line
 - index.html\line
-- assets/ css/styles.css, js/data.js, js/main.js, img/\line
+- assets/\line
+  - css/styles.css\line
+  - js/data.js\line
+  - js/main.js\line
+  - img/ (incluye img/catalogo con fotos locales)\line
 - netlify.toml\line
+- docs/ (manuales)\line
 \line
 \b 3. Requisitos\b0\line
 - Git 2.x, VS Code (sugerido) con Live Server (opcional), Navegador moderno.\line
+- Para Netlify (opcional): Netlify CLI o conexión por GitHub.\line
 \line
-\b 4. Arquitectura y responsabilidades\b0\line
-- index.html: marcado semántico, secciones Hero/Productos/Nosotros/Opiniones/Contacto/Footer.\line
-- assets/css/styles.css: variables CSS (paleta azul marino), layout responsive, componentes.\line
+\b 4. Branding y tema\b0\line
+- Nombre: \b Calzado Oxlaj\b0 (título, metas, encabezado y footer).\line
+- Paleta principal (styles.css):\line
+  - --primary: #0b3d91\line
+  - --primary-600: #092f6b\line
+- Favicon SVG inline ajustado al azul marino.\line
+\line
+\b 5. Arquitectura y responsabilidades\b0\line
+- index.html: marcado semántico y componentes (nav, hero, features, products, about, testimonials, contact, footer).\line
+- assets/css/styles.css: variables de tema, layout responsive, componentes; estilos de carrito (drawer), badge, toasts.\line
 - assets/js/data.js: arreglo PRODUCTS (catálogo) y TESTIMONIALS.\line
-- assets/js/main.js: menú responsive, render catálogo, validación, WhatsApp, back-to-top, año dinámico.\line
+- assets/js/main.js: menú responsive, render catálogo, validación, botón flotante WhatsApp, back-to-top, \b carrito y favoritos con localStorage\b0.\line
 \line
-\b 5. Variables de tema (styles.css)\b0\line
-- --primary: #0b3d91\line
-- --primary-600: #092f6b\line
-Puedes ajustar tipografías y contenedor en :root.\line
-\line
-\b 6. Datos del catálogo (data.js)\b0\line
+\b 6. Catálogo (data.js)\b0\line
 Estructura de producto: { id: number, title: string, price: number, img: string, tags: string[] }.\line
-Para usar imágenes propias: coloca archivos en assets/img/ y usa rutas relativas (p.ej. assets/img/oxford.jpg).\line
+- Para usar imágenes propias: coloca archivos en assets/img/catalogo/ y usa rutas relativas (p.ej. assets/img/catalogo/mi-foto.jpg).\line
+- Se añadieron productos (id 9–15) usando imágenes de WhatsApp colocadas en assets/img/catalogo/.\line
 \line
-\b 7. Flujo del formulario y WhatsApp (main.js)\b0\line
-- Validación básica de nombre, email y mensaje.\line
-- Si es válido, abre wa.me con mensaje preformateado. Cambia WA_NUMBER por tu número internacional.\line
+\b 7. Carrito y favoritos (main.js)\b0\line
+- Persistencia local: localStorage.\line
+  - Claves: CART_KEY = 'oxlaj_cart_v1', FAV_KEY = 'oxlaj_fav_v1'.\line
+- Carrito:\line
+  - Botón 🛒 con badge en la barra.\line
+  - Drawer lateral: lista, +/- cantidad, quitar, total y checkout.\line
+  - Checkout abre wa.me con el detalle del pedido.\line
+- Favoritos:\line
+  - Botón ❤ en cada tarjeta. Estado visible y persistente.\line
 \line
-\b 8. Accesibilidad\b0\line
-- aria-labels, aria-live, etiquetas adecuadas y contraste con tema.\line
+\b 8. Orden del catálogo\b0\line
+- Render prioriza primero las imágenes locales cuyo path empieza con assets/img/catalogo/ y mantiene orden estable para el resto.\line
 \line
-\b 9. Despliegue\b0\line
-- Netlify: publish = ".". Sin build.\line
+\b 9. WhatsApp\b0\line
+- Configurar número en main.js: WA_NUMBER = '+502XXXXXXXX'.\line
+- Formulario de contacto y botón flotante abren WhatsApp con mensaje preformateado.\line
 \line
-\b 10. Desarrollo local\b0\line
+\b 10. Accesibilidad\b0\line
+- aria-labels, aria-live en testimonios, foco y contrastes adecuados.\line
+\line
+\b 11. Desarrollo local\b0\line
 - Abrir index.html o usar Live Server.\line
 - Alternativa: python -m http.server 5500 y abrir http://localhost:5500\line
 \line
-\b 11. GitHub (flujo)\b0\line
-- Primer push (ya hecho). Cambios: git add ., git commit -m "mensaje", git push origin main.\line
+\b 12. Flujo GitHub\b0\line
+- Repo: Oxlaj/zapateria-paso-firme (rama main).\line
+- Cambios: git add ., git commit -m "mensaje", git push origin main.\line
 \line
-\b 12. Netlify (flujo)\b0\line
-- Import from Git: GitHub -> repo -> build: (vacío), publish: "." -> Deploy.\line
-- En cada push se redeploya automáticamente.\line
+\b 13. Despliegue Netlify\b0\line
+- Conectar el repo: Add new site -> Import existing project -> GitHub -> Repo -> Publish directory: "." (sin build).\line
+- netlify.toml: publish = ".".\line
+- Alternativa CLI: netlify login -> netlify init -> escoger deploy desde directorio actual (root).\line
+\line
+\b 14. Solución de problemas\b0\line
+- Imágenes no cargan: verificar ruta y archivo en assets/img/ o assets/img/catalogo/.\line
+- WhatsApp: confirmar WA_NUMBER con código internacional.\line
+- Netlify no actualiza: confirmar push a main y logs de deploy.\line
 }
