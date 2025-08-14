@@ -29,6 +29,9 @@
         <li><a href="#opiniones" class="nav__link">Opiniones</a></li>
         <li><a href="#contacto" class="nav__link cta">Contacto</a></li>
       </ul>
+      <button id="cartBtn" class="nav__cart" aria-label="Abrir carrito" title="Carrito">
+        🛒 <span id="cartCount" class="badge">0</span>
+      </button>
     </nav>
 
     <section class="hero container">
@@ -163,6 +166,26 @@
 
   <button class="back-to-top" id="backToTop" aria-label="Volver arriba">↑</button>
   <button class="whatsapp-float" id="waButton" aria-label="Chatear por WhatsApp">🟢</button>
+
+  <!-- Panel lateral de carrito -->
+  <div class="drawer" id="cartDrawer" aria-hidden="true" role="dialog" aria-label="Carrito de compras">
+    <div class="drawer__header">
+      <h3>Tu carrito</h3>
+      <button class="drawer__close" id="cartClose" aria-label="Cerrar carrito">×</button>
+    </div>
+    <div class="drawer__body">
+      <ul id="cartList" class="cart__list"></ul>
+      <div class="cart__empty" id="cartEmpty">Tu carrito está vacío.</div>
+    </div>
+    <div class="drawer__footer">
+      <div class="cart__total">Total: <strong id="cartTotal">Q0.00</strong></div>
+      <button id="cartCheckout" class="btn btn--primary" aria-label="Enviar pedido por WhatsApp">Enviar por WhatsApp</button>
+    </div>
+  </div>
+  <div class="drawer__overlay" id="drawerOverlay" hidden></div>
+
+  <!-- Toasts -->
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="./assets/js/data.js" defer></script>
   <script src="./assets/js/main.js" defer></script>
