@@ -1,7 +1,7 @@
 /* ===== Variables y resets ===== */
 :root {
-  --primary: #e63946;
-  --primary-600: #c62f3a;
+  --primary: #0b3d91; /* azul marino */
+  --primary-600: #092f6b; /* tono más oscuro para hover */
   --dark: #1d1d1f;
   --gray-700: #3a3a3c;
   --gray-500: #6e6e73;

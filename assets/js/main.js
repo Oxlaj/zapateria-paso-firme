@@ -102,7 +102,7 @@ function buildWaLink(params) {
   return `${base}${WA_NUMBER.replace(/[^\d]/g,'')}?text=${text}`;
 }
 waBtn?.addEventListener('click', () => {
-  const link = buildWaLink({ text: 'Hola Paso Firme, me gustaría consultar disponibilidad.' });
+  const link = buildWaLink({ text: 'Hola Calzado Oxlaj, me gustaría consultar disponibilidad.' });
   window.open(link, '_blank');
 });
 

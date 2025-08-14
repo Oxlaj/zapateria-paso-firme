@@ -1,4 +1,4 @@
-# Zapatería Paso Firme (sitio estático)
+# Calzado Oxlaj (sitio estático)
 
 Sitio web estático en HTML5, CSS3 y JavaScript para una zapatería.
 
@@ -15,8 +15,8 @@ Sitio web estático en HTML5, CSS3 y JavaScript para una zapatería.
 - Recomendado en VS Code: instala la extensión "Live Server" y haz clic en "Go Live" para recargar cambios al guardar.
 
 ## Personalizar
-- Nombre/branding: cambia el texto "Paso Firme" y los contenidos en `index.html`.
-- Colores: ajusta variables en `assets/css/styles.css` (por ejemplo `--primary`).
+- Nombre/branding: cambia textos en `index.html` (actual: "Calzado Oxlaj").
+- Colores: ajusta variables en `assets/css/styles.css` (por ejemplo `--primary` y `--primary-600`, definidos en azul marino).
 - Productos y opiniones: edita `assets/js/data.js`.
 - Imágenes: por defecto se usan placeholders remotos. Sustitúyelos por rutas locales (por ejemplo `assets/img/hero.jpg`) y coloca las imágenes en `assets/img/`.
 
