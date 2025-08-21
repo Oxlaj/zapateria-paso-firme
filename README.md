@@ -1,6 +1,6 @@
 # Calzado Oxlaj
 
-Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y contacto por WhatsApp. Sin carrito de compras.
+Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y contacto por WhatsApp. Sin carrito de compras ni mapa.
 
 ## Características
 - Catálogo de productos (imágenes locales y de muestra)
