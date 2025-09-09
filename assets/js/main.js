@@ -307,9 +307,9 @@ renderProducts();
 renderTestimonials();
 syncCartFromServer().then(()=>renderCart());
 
-const headerEl = document.querySelector('.nav');
+const navBarEl = document.querySelector('.nav');
 window.addEventListener('scroll', () => {
-  if (window.scrollY > 10) headerEl?.classList.add('scrolled'); else headerEl?.classList.remove('scrolled');
+  if (window.scrollY > 10) navBarEl?.classList.add('scrolled'); else navBarEl?.classList.remove('scrolled');
 });
 
 // ===== Autenticación y Admin =====
@@ -317,6 +317,9 @@ const navLogin = document.getElementById('navLogin');
 const navAdmin = document.getElementById('navAdmin');
 const secLogin = document.getElementById('login');
 const secAdmin = document.getElementById('admin');
+const pageHeader = document.querySelector('header');
+const pageMain = document.querySelector('main');
+const pageFooter = document.querySelector('footer');
 const loginForm = document.getElementById('loginForm');
 const loginEmail = document.getElementById('loginEmail');
 const loginPass = document.getElementById('loginPass');
@@ -334,6 +337,10 @@ function showSection(id) {
   [secLogin, secAdmin].forEach(s => s && (s.style.display='none'));
   const el = document.getElementById(id);
   if (el) el.style.display = '';
+  // Si mostramos login, ocultamos el resto del sitio;
+  // caso contrario, mostramos todo el sitio.
+  const showSite = id !== 'login';
+  [pageHeader, pageMain, pageFooter].forEach(el => { if (!el) return; el.style.display = showSite ? '' : 'none'; });
 }
 
 async function fetchUser() {
@@ -395,7 +402,18 @@ logoutBtn?.addEventListener('click', async ()=>{
 });
 
 document.addEventListener('DOMContentLoaded', async ()=>{
-  const u = await fetchUser(); updateNavForUser(u);
+  // Gate de acceso: mostrar login primero
+  const u = await fetchUser();
+  updateNavForUser(u);
+  if (!u) {
+    showSection('login');
+  } else if (u.rol === 'admin') {
+    showSection('admin');
+    await loadAdminTable();
+  } else {
+    // Cliente
+    showSection('inicio'); // mostrará el sitio completo
+  }
 });
 
 // CRUD de productos (admin)
