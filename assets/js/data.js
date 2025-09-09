@@ -16,6 +16,14 @@ const PRODUCTS = [
   { id: 13, title: 'Modelo E', price: 399.00, img: 'assets/img/catalogo/Imagen de WhatsApp 2025-08-13 a las 23.17.21_69ed2281.jpg', tags: ['Casual'] },
   { id: 14, title: 'Modelo F', price: 399.00, img: 'assets/img/catalogo/Imagen de WhatsApp 2025-08-13 a las 23.17.21_8a1ea11b.jpg', tags: ['Casual'] },
   { id: 15, title: 'Modelo G', price: 399.00, img: 'assets/img/catalogo/Imagen de WhatsApp 2025-08-13 a las 23.17.21_d88b1449.jpg', tags: ['Casual'] },
+  { id: 16, title: 'Modelo H', price: 399.00, img: 'assets/img/Imagen de WhatsApp 2025-09-08 a las 23.13.59_7b9dc4d2.jpg', tags: ['Casual'] },
+  { id: 17, title: 'Modelo I', price: 399.00, img: 'assets/img/Imagen de WhatsApp 2025-09-08 a las 23.14.02_bf561da3.jpg', tags: ['Casual'] },
+  { id: 18, title: 'Modelo J', price: 399.00, img: 'assets/img/Imagen de WhatsApp 2025-09-08 a las 23.14.03_228cb600.jpg', tags: ['Casual'] },
+  { id: 19, title: 'Modelo K', price: 399.00, img: 'assets/img/Imagen de WhatsApp 2025-09-08 a las 23.14.03_2aa192ec.jpg', tags: ['Casual'] },
+  { id: 20, title: 'Modelo L', price: 399.00, img: 'assets/img/Imagen de WhatsApp 2025-09-08 a las 23.14.03_6f231b01.jpg', tags: ['Casual'] },
+  { id: 21, title: 'Modelo M', price: 399.00, img: 'assets/img/Imagen de WhatsApp 2025-09-08 a las 23.14.03_7d940ca6.jpg', tags: ['Casual'] },
+  { id: 22, title: 'Modelo N', price: 399.00, img: 'assets/img/Imagen de WhatsApp 2025-09-08 a las 23.14.03_bb518f5f.jpg', tags: ['Casual'] },
+  { id: 23, title: 'Modelo O', price: 399.00, img: 'assets/img/Imagen de WhatsApp 2025-09-08 a las 23.14.04_11ed4a09.jpg', tags: ['Casual'] },
 ];
 
 const TESTIMONIALS = [
