@@ -1,5 +1,5 @@
 # Calzado Oxlaj
-Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y contacto por WhatsApp. Sin carrito de compras ni mapa.
+Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y contacto por WhatsApp. Sin base de datos ni autenticación (deshabilitados temporalmente).
 
 ## Características
 - Catálogo de productos (imágenes locales y de muestra)
@@ -13,7 +13,7 @@ Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y con
 - `index.html`: página principal
 - `assets/css/styles.css`: estilos
 - `assets/js/data.js`: datos de productos y testimonios
-- `assets/js/main.js`: lógica de favoritos, WhatsApp, renderizado
+- `assets/js/main.js`: lógica de favoritos, WhatsApp, renderizado (sin backend; USE_SERVER=false)
 - `assets/img/`: imágenes y logo
 - `docs/`: manuales técnico y de usuario
 - `netlify.toml`: configuración de despliegue

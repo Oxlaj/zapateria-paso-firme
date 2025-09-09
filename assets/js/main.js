@@ -281,14 +281,17 @@ productsGrid?.addEventListener('click', (e) => {
   }
 });
 
+const USE_SERVER = false; // Deshabilita backend/BD por ahora
 const API_BASE = 'api'; // base relativa para XAMPP/Apache local (funciona en subcarpetas)
 async function api(path, options={}) {
+  if (!USE_SERVER) return null;
   try {
     const res = await fetch(`${API_BASE}${path}`, { headers: { 'Content-Type':'application/json' }, ...options });
     return await res.json();
   } catch(e) { console.warn('API error', e); return null; }
 }
 async function syncCartFromServer() {
+  if (!USE_SERVER) return;
   const data = await api('/cart.php');
   if (data && Array.isArray(data.cart)) {
     cart = data.cart.map(it => ({ id: it.id, title: it.title, price: Number(it.price), img: it.img, qty: it.qty }));
@@ -297,9 +300,9 @@ async function syncCartFromServer() {
     renderCart();
   }
 }
-async function serverAdd(id) { await api('/cart.php', { method:'POST', body: JSON.stringify({ id }) }); }
-async function serverUpdate(id, qty) { await api('/cart.php', { method:'PUT', body: JSON.stringify({ id, qty }) }); }
-async function serverRemove(id) { await api(`/cart.php?id=${id}`, { method:'DELETE' }); }
+async function serverAdd(id) { if (!USE_SERVER) return; await api('/cart.php', { method:'POST', body: JSON.stringify({ id }) }); }
+async function serverUpdate(id, qty) { if (!USE_SERVER) return; await api('/cart.php', { method:'PUT', body: JSON.stringify({ id, qty }) }); }
+async function serverRemove(id) { if (!USE_SERVER) return; await api(`/cart.php?id=${id}`, { method:'DELETE' }); }
 
 // Inicialización extendida
 loadState();
@@ -308,131 +311,8 @@ renderTestimonials();
 syncCartFromServer().then(()=>renderCart());
 
 const navBarEl = document.querySelector('.nav');
-window.addEventListener('scroll', () => {
-  if (window.scrollY > 10) navBarEl?.classList.add('scrolled'); else navBarEl?.classList.remove('scrolled');
+// Sitio público sin BD ni autenticación
+document.addEventListener('DOMContentLoaded', ()=>{
+  // sin cambios
 });
 
-// ===== Autenticación y Admin =====
-const navLogin = document.getElementById('navLogin');
-const navAdmin = document.getElementById('navAdmin');
-const secLogin = document.getElementById('login');
-const secAdmin = document.getElementById('admin');
-const pageHeader = document.querySelector('header');
-const pageMain = document.querySelector('main');
-const pageFooter = document.querySelector('footer');
-const loginForm = document.getElementById('loginForm');
-const loginEmail = document.getElementById('loginEmail');
-const loginPass = document.getElementById('loginPass');
-const loginErr = document.getElementById('loginErr');
-const logoutBtn = document.getElementById('logoutBtn');
-const prodForm = document.getElementById('prodForm');
-const pId = document.getElementById('pId');
-const pTitulo = document.getElementById('pTitulo');
-const pPrecio = document.getElementById('pPrecio');
-const pImagen = document.getElementById('pImagen');
-const pEtiquetas = document.getElementById('pEtiquetas');
-const adminTabla = document.querySelector('#adminTabla tbody');
-
-function showSection(id) {
-  [secLogin, secAdmin].forEach(s => s && (s.style.display='none'));
-  const el = document.getElementById(id);
-  if (el) el.style.display = '';
-  // Si mostramos login, ocultamos el resto del sitio;
-  // caso contrario, mostramos todo el sitio.
-  const showSite = id !== 'login';
-  [pageHeader, pageMain, pageFooter].forEach(el => { if (!el) return; el.style.display = showSite ? '' : 'none'; });
-}
-
-async function fetchUser() {
-  const r = await api('/auth.php');
-  return r?.user || null;
-}
-
-function updateNavForUser(user) {
-  if (user) {
-    navLogin?.setAttribute('href', '#');
-    navLogin && (navLogin.textContent = user.nombre);
-    logoutBtn && (logoutBtn.style.display = 'inline-flex');
-    if (user.rol === 'admin') navAdmin && (navAdmin.style.display = 'inline');
-    else navAdmin && (navAdmin.style.display = 'none');
-  } else {
-    navLogin && (navLogin.textContent = 'Ingresar');
-    navLogin?.setAttribute('href', '#login');
-    logoutBtn && (logoutBtn.style.display = 'none');
-    navAdmin && (navAdmin.style.display = 'none');
-  }
-}
-
-async function loadAdminTable() {
-  const data = await api('/admin_products.php');
-  if (!data || !Array.isArray(data.items)) return;
-  adminTabla.innerHTML = '';
-  data.items.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.id}</td><td>${r.titulo}</td><td>${r.precio}</td><td>${r.imagen||''}</td><td>${r.etiquetas||''}</td>`;
-    tr.addEventListener('click', () => {
-      pId.value = r.id; pTitulo.value = r.titulo; pPrecio.value = r.precio; pImagen.value = r.imagen||''; pEtiquetas.value = r.etiquetas||'';
-    });
-    adminTabla.appendChild(tr);
-  });
-}
-
-// Navegación a secciones de login/admin
-navLogin?.addEventListener('click', (e)=>{
-  if (navLogin.getAttribute('href') === '#') { e.preventDefault(); }
-  showSection('login');
-});
-navAdmin?.addEventListener('click', (e)=>{
-  e.preventDefault(); showSection('admin'); loadAdminTable();
-});
-
-loginForm?.addEventListener('submit', async (e)=>{
-  e.preventDefault(); loginErr.textContent = '';
-  const correo = loginEmail.value.trim(); const password = loginPass.value;
-  const res = await api('/auth.php', { method:'POST', body: JSON.stringify({ correo, password }) });
-  if (res?.error) { loginErr.textContent = res.error; return; }
-  const user = res?.user; updateNavForUser(user);
-  if (user?.rol === 'admin') { showSection('admin'); loadAdminTable(); }
-  else { showSection('login'); }
-});
-
-logoutBtn?.addEventListener('click', async ()=>{
-  await api('/auth.php', { method:'DELETE' });
-  updateNavForUser(null); showSection('login');
-});
-
-document.addEventListener('DOMContentLoaded', async ()=>{
-  // Gate de acceso: mostrar login primero
-  const u = await fetchUser();
-  updateNavForUser(u);
-  if (!u) {
-    showSection('login');
-  } else if (u.rol === 'admin') {
-    showSection('admin');
-    await loadAdminTable();
-  } else {
-    // Cliente
-    showSection('inicio'); // mostrará el sitio completo
-  }
-});
-
-// CRUD de productos (admin)
-prodForm?.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const payload = { id:Number(pId.value), titulo:pTitulo.value.trim(), precio:Number(pPrecio.value), imagen:pImagen.value.trim(), etiquetas:pEtiquetas.value.trim() };
-  const res = await api('/admin_products.php', { method:'POST', body: JSON.stringify(payload) });
-  if (res?.error) { showToast(res.error); return; }
-  showToast('Producto creado'); await loadAdminTable();
-});
-document.getElementById('btnActualizar')?.addEventListener('click', async ()=>{
-  const payload = { id:Number(pId.value), titulo:pTitulo.value.trim(), precio:Number(pPrecio.value), imagen:pImagen.value.trim(), etiquetas:pEtiquetas.value.trim() };
-  const res = await api('/admin_products.php', { method:'PUT', body: JSON.stringify(payload) });
-  if (res?.error) { showToast(res.error); return; }
-  showToast('Producto actualizado'); await loadAdminTable();
-});
-document.getElementById('btnEliminar')?.addEventListener('click', async ()=>{
-  const id = Number(pId.value); if (!id) return;
-  const res = await api(`/admin_products.php?id=${id}`, { method:'DELETE' });
-  if (res?.error) { showToast(res.error); return; }
-  showToast('Producto eliminado'); await loadAdminTable();
-});
