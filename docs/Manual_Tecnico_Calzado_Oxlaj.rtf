@@ -1,0 +1,58 @@
+{\rtf1\ansi\deff0{\fonttbl{\f0 Arial;}}\fs22
+\b Manual Técnico - Calzado Oxlaj\b0\line
+Versión: 1.3 \tab Fecha: 2025-08-20\line
+\line
+\b 1. Descripción general\b0\line
+Sitio estático en HTML5, CSS3 y JavaScript para la zapatería Calzado Oxlaj. Catálogo, favoritos y contacto por WhatsApp.\line
+\line
+\b 2. Estructura del proyecto\b0\line
+- index.html\line
+- assets/ (css, js, img/catalogo)\line
+- netlify.toml\line
+- docs/ (manuales)\line
+\line
+\b 3. Requisitos\b0\line
+- Git, VS Code (Live Server opcional), navegador moderno.\line
+- Netlify CLI o conexión por GitHub para despliegue.\line
+\line
+\b 4. Branding y tema\b0\line
+- Nombre: Calzado Oxlaj\line
+- Paleta azul marino\line
+- Favicon SVG inline\line
+\line
+\b 5. Arquitectura\b0\line
+- index.html: estructura y secciones\line
+- styles.css: estilos y responsividad\line
+- data.js: productos y testimonios\line
+- main.js: favoritos, WhatsApp, renderizado\line
+\line
+\b 6. Catálogo\b0\line
+- Productos con imágenes locales en assets/img/catalogo/\line
+- Edita data.js para agregar productos\line
+\line
+\b 7. Favoritos\b0\line
+- Marcar productos como favoritos (localStorage, clave FAV_KEY)\line
+- Persisten en el dispositivo del usuario\line
+\line
+\b 8. WhatsApp\b0\line
+- Botón flotante y formulario de contacto abren WhatsApp con mensaje preformateado\line
+- Configura el número en main.js (WA_NUMBER)\line
+\line
+\b 9. Accesibilidad\b0\line
+- aria-labels, contraste, navegación por teclado\line
+\line
+\b 10. Desarrollo local\b0\line
+- Abrir index.html o usar Live Server\line
+\line
+\b 11. Flujo GitHub\b0\line
+- git add ., git commit -m "mensaje", git push origin main\line
+\line
+\b 12. Despliegue Netlify\b0\line
+- Conectar repo y publicar desde directorio raíz\line
+- netlify.toml: publish = "."\line
+\line
+\b 13. Solución de problemas\b0\line
+- Imágenes: verificar ruta en assets/img/catalogo/\line
+- WhatsApp: confirmar número internacional\line
+- Netlify: verificar push y logs\line
+}

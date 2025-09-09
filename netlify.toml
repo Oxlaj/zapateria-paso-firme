@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+  command = ""
+
+# Opcional: fuerza HTTPS y ofrece rutas limpias en el futuro si agregas más páginas
+# [[redirects]]
+#   from = "/"
+#   to = "/index.html"
+#   status = 200

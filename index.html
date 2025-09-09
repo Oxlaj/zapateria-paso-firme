@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calzado Oxlaj | Calidad y Estilo</title>
+  <meta name="description" content="Calzado Oxlaj: calzado para toda la familia. Encuentra zapatos de calidad, cómodos y con estilo." />
+  <!-- Open Graph / SEO -->
+  <meta property="og:title" content="Calzado Oxlaj" />
+  <meta property="og:description" content="Calzado cómodo y de calidad para toda la familia." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://placehold.co/1200x630/png?text=Calzado+Oxlaj" />
+  <meta name="theme-color" content="#0b3d91" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230b3d91'/%3E%3C/svg%3E" type="image/svg+xml">
+</head>
+<body>
+  <header class="header" id="inicio">
+    <nav class="nav container">
+      <a href="#inicio" class="logo" aria-label="Inicio - Calzado Oxlaj"><img src="assets/img/logo-oxlaj.svg" alt="Logo Calzado Oxlaj"></a>
+      <button class="nav__toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+      <ul class="nav__menu" id="navMenu" aria-label="Menú principal">
+        <li><a href="#inicio" class="nav__link">Inicio</a></li>
+        <li><a href="#productos" class="nav__link">Productos</a></li>
+        <li><a href="#nosotros" class="nav__link">Nosotros</a></li>
+        <li><a href="#opiniones" class="nav__link">Opiniones</a></li>
+        <li><a href="#contacto" class="nav__link cta">Contacto</a></li>
+  <li><a href="#login" class="nav__link" id="navLogin">Ingresar</a></li>
+  <li><a href="#admin" class="nav__link" id="navAdmin" style="display:none">Administrar</a></li>
+      </ul>
+      <div class="nav__actions">
+        <button id="cartBtn" class="nav__cart" aria-label="Abrir carrito" title="Carrito">🛒 <span id="cartCount" class="badge">0</span></button>
+      </div>
+    </nav>
+
+    <section class="hero container">
+      <div class="hero__content">
+        <h1>Calzado que te acompaña en cada paso</h1>
+        <p>Confort, calidad y diseño para toda la familia. Descubre nuestras colecciones y camina con seguridad y estilo.</p>
+        <div class="hero__actions">
+          <a href="#productos" class="btn btn--primary">Ver colección</a>
+          <a href="#contacto" class="btn btn--outline">Hacer pedido</a>
+        </div>
+      </div>
+      <picture class="hero__image">
+        <img src="assets/img/coleccion.jpg" alt="Colección de zapatos Calzado Oxlaj" loading="lazy" />
+      </picture>
+    </section>
+  </header>
+
+  <main>
+    <section class="login container" id="login" aria-labelledby="login-title" style="display:none">
+      <h2 id="login-title">Iniciar sesión</h2>
+      <form id="loginForm" class="form" style="max-width:420px">
+        <div class="form__field">
+          <label for="loginEmail">Correo</label>
+          <input id="loginEmail" type="email" required placeholder="admin@oxlaj.local">
+        </div>
+        <div class="form__field">
+          <label for="loginPass">Contraseña</label>
+          <input id="loginPass" type="password" required placeholder="••••••••">
+        </div>
+        <button class="btn btn--primary" type="submit">Entrar</button>
+        <button class="btn btn--outline" type="button" id="logoutBtn" style="display:none">Cerrar sesión</button>
+        <small id="loginErr" class="error" aria-live="polite"></small>
+      </form>
+    </section>
+
+    <section class="admin container" id="admin" aria-labelledby="admin-title" style="display:none">
+      <h2 id="admin-title">Administrar productos</h2>
+      <form id="prodForm" class="form" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:1rem; align-items:end;">
+        <div class="form__field">
+          <label for="pId">ID</label>
+          <input id="pId" type="number" min="1" required>
+        </div>
+        <div class="form__field">
+          <label for="pTitulo">Título</label>
+          <input id="pTitulo" type="text" required>
+        </div>
+        <div class="form__field">
+          <label for="pPrecio">Precio</label>
+          <input id="pPrecio" type="number" step="0.01" min="0" required>
+        </div>
+        <div class="form__field">
+          <label for="pImagen">Imagen</label>
+          <input id="pImagen" type="text" placeholder="assets/img/...">
+        </div>
+        <div class="form__field">
+          <label for="pEtiquetas">Etiquetas</label>
+          <input id="pEtiquetas" type="text" placeholder="casual,deporte">
+        </div>
+        <button class="btn btn--primary" id="btnGuardar" type="submit">Guardar</button>
+        <button class="btn btn--outline" id="btnActualizar" type="button">Actualizar</button>
+        <button class="btn btn--outline" id="btnEliminar" type="button">Eliminar</button>
+      </form>
+      <div style="overflow:auto">
+        <table class="table" id="adminTabla" style="width:100%; margin-top:1rem">
+          <thead><tr><th>ID</th><th>Título</th><th>Precio</th><th>Imagen</th><th>Etiquetas</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="features container" aria-label="Beneficios">
+      <article class="feature">
+        <span class="feature__icon">👟</span>
+        <h3>Confort premium</h3>
+        <p>Plantillas acolchadas y materiales transpirables para un día sin cansancio.</p>
+      </article>
+      <article class="feature">
+        <span class="feature__icon">🧵</span>
+        <h3>Materiales de calidad</h3>
+        <p>Cuero y textiles resistentes, seleccionados para durar.</p>
+      </article>
+      <article class="feature">
+        <span class="feature__icon">🚚</span>
+        <h3>Envíos a todo el país</h3>
+        <p>Recibe tus zapatos donde estés, rápido y seguro.</p>
+      </article>
+    </section>
+
+    <section class="products" id="productos" aria-labelledby="productos-title">
+      <div class="container">
+        <h2 id="productos-title">Productos destacados</h2>
+        <div class="products__grid" id="productsGrid">
+          <!-- Productos generados por JS -->
+        </div>
+      </div>
+    </section>
+
+    <section class="about container" id="nosotros">
+      <div class="about__media">
+        <picture>
+          <img src="assets/img/tienda.jpg" alt="Interior de la zapatería Calzado Oxlaj" loading="lazy" />
+        </picture>
+      </div>
+      <div class="about__content">
+        <h2>Sobre nosotros</h2>
+        <p>Somos una zapatería familiar con más de 15 años ofreciendo calzado cómodo, moderno y de gran calidad. Trabajamos con marcas reconocidas y también con producción local.</p>
+        <ul class="about__list">
+          <li>Atención personalizada</li>
+          <li>Tallas para niños, mujeres y hombres</li>
+          <li>Garantía de satisfacción</li>
+        </ul>
+        <a href="#contacto" class="btn btn--primary">Contáctanos</a>
+      </div>
+    </section>
+
+    <section class="testimonials" id="opiniones">
+      <div class="container">
+        <h2>Lo que dicen nuestros clientes</h2>
+        <div class="testimonials__slider" id="testimonialSlider" aria-live="polite">
+          <!-- Opiniones generadas por JS -->
+        </div>
+      </div>
+    </section>
+
+    <section class="contact" id="contacto" aria-labelledby="contact-title">
+      <div class="container contact__grid">
+        <div>
+          <h2 id="contact-title">Contáctanos</h2>
+          <p>¿Tienes preguntas o quieres realizar un pedido? Escríbenos y te responderemos pronto.</p>
+          <ul class="contact__info">
+            <li>📍 5a Av. 10-25, Zona 1, Ciudad de Guatemala</li>
+            <li>☎️ <a href="tel:+50255555555">+502 5555-5555</a></li>
+            <li>✉️ <a href="mailto:contacto@pasofirme.com">contacto@pasofirme.com</a></li>
+            <li>🕒 Lun - Sáb: 9:00 - 19:00</li>
+          </ul>
+        </div>
+        <form class="form" id="contactForm" novalidate>
+          <div class="form__field">
+            <label for="name">Nombre</label>
+            <input id="name" name="name" type="text" placeholder="Tu nombre" required>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="form__field">
+            <label for="email">Correo</label>
+            <input id="email" name="email" type="email" placeholder="tucorreo@ejemplo.com" required>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <div class="form__field">
+            <label for="message">Mensaje</label>
+            <textarea id="message" name="message" rows="4" placeholder="¿En qué podemos ayudarte?" required></textarea>
+            <small class="error" aria-live="polite"></small>
+          </div>
+          <button type="submit" class="btn btn--primary">Enviar</button>
+          <p class="form__success" role="status" hidden>¡Gracias! Hemos recibido tu mensaje.</p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div>
+        <a href="#inicio" class="logo"><img src="assets/img/logo-oxlaj.svg" alt="Logo Calzado Oxlaj" style="height:28px"></a>
+        <p>Calzado de calidad para cada paso de tu vida.</p>
+      </div>
+      <ul class="footer__links">
+        <li><a href="#productos">Productos</a></li>
+        <li><a href="#nosotros">Nosotros</a></li>
+        <li><a href="#opiniones">Opiniones</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+      </ul>
+      <div class="footer__social">
+        <a href="#" aria-label="Facebook" title="Facebook">📘</a>
+        <a href="#" aria-label="Instagram" title="Instagram">📸</a>
+  <a href="https://wa.me/50254728021" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">💬</a>
+      </div>
+    </div>
+    <div class="footer__copy">© <span id="year"></span> Calzado Oxlaj. Todos los derechos reservados.</div>
+  </footer>
+
+  <button class="back-to-top" id="backToTop" aria-label="Volver arriba">↑</button>
+  <button class="whatsapp-float" id="waButton" aria-label="Chatear por WhatsApp">🟢</button>
+
+  <!-- Carrito Drawer -->
+  <div class="drawer" id="cartDrawer" aria-hidden="true" role="dialog" aria-label="Carrito de compras">
+    <div class="drawer__header">
+      <h3>Mi pedido</h3>
+      <button class="drawer__close" id="cartClose" aria-label="Cerrar carrito">×</button>
+    </div>
+    <div class="drawer__body">
+      <ul id="cartList" class="cart__list"></ul>
+      <div class="cart__empty" id="cartEmpty">Tu carrito está vacío.</div>
+    </div>
+    <div class="drawer__footer">
+      <div class="cart__total">Total: <strong id="cartTotal">Q0.00</strong></div>
+      <button id="cartCheckout" class="btn btn--primary" aria-label="Confirmar pedido">Confirmar pedido</button>
+    </div>
+  </div>
+  <div class="drawer__overlay" id="drawerOverlay" hidden></div>
+
+  <!-- Toasts -->
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="./assets/js/data.js" defer></script>
+  <script src="./assets/js/main.js" defer></script>
+</body>
+</html>
