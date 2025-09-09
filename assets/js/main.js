@@ -39,7 +39,13 @@ function createProductCard(p) {
 function renderProducts() {
   if (!productsGrid) return;
   productsGrid.innerHTML = '';
-  const sorted = PRODUCTS.map((p, i) => ({ p, i }))
+  const hasRealImage = (p) => {
+    const src = String(p.img || '').trim();
+    if (!src) return false;
+    if (src.includes('placehold.co')) return false;
+    return true;
+  };
+  const sorted = PRODUCTS.filter(hasRealImage).map((p, i) => ({ p, i }))
     .sort((a, b) => {
       const aLocal = String(a.p.img || '').startsWith('assets/img/catalogo/');
       const bLocal = String(b.p.img || '').startsWith('assets/img/catalogo/');
