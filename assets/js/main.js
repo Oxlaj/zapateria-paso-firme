@@ -334,8 +334,11 @@ function clearRole(){ localStorage.removeItem(ROLE_KEY); }
 
 function showSite(show){ [pageHeader,pageMain,pageFooter].forEach(el=>{ if(!el) return; el.style.display = show ? '' : 'none'; }); }
 function showLogin(){
-  if(secLogin) secLogin.style.display='';
-  showSite(false);
+  // Mostrar solo la pantalla de login: asegurar que <main> esté visible
+  if (secLogin) secLogin.style.display='';
+  if (pageMain) pageMain.style.display='';
+  if (pageHeader) pageHeader.style.display='none';
+  if (pageFooter) pageFooter.style.display='none';
   navAdmin && (navAdmin.style.display='none');
   // si ya hay rol, permite cerrar sesión desde el login
   const hasRole = !!getRole();
@@ -344,7 +347,7 @@ function showLogin(){
   const ap=document.getElementById('adminPanel'); if(ap) ap.style.display='none';
   // preseleccionar el radio según rol actual
   const current = getRole();
-  const radios = $$('input[name="rol"]', secLogin||document);
+  const radios = $$("input[name=\"rol\"]", secLogin||document);
   if (current && radios.length){
     radios.forEach(r=>{ r.checked = (r.value === current); });
   }
