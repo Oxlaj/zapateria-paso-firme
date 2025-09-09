@@ -9,6 +9,16 @@ Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y con
 - Diseño responsivo y accesible
 - Despliegue en Netlify y GitHub Pages
 
+## Roles estáticos y Panel Admin
+- Al abrir el sitio se muestra primero un selector de rol (Cliente o Administrador).
+- La elección se guarda en localStorage y se puede cambiar con “Cerrar sesión”.
+- Si eliges Administrador, en la sección “Productos” verás un “Panel Administrador (estático)”.
+   - Permite crear/editar/eliminar productos en memoria y se guardan en localStorage.
+   - Campos: ID, Título, Precio, Imagen (ruta como assets/img/...), Etiquetas (separadas por comas).
+   - Para resetear los cambios de productos, borra el almacenamiento del navegador (localStorage) o cambia de navegador.
+
+Nota: El backend en PHP/MySQL existe en la carpeta `api/`, pero está deshabilitado desde el frontend (USE_SERVER=false).
+
 ## Estructura
 - `index.html`: página principal
 - `assets/css/styles.css`: estilos

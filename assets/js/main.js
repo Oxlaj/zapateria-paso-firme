@@ -18,6 +18,7 @@ $$('.nav__link').forEach(l => l.addEventListener('click', () => {
 
 // Render de productos
 const productsGrid = $('#productsGrid');
+let productsOverride = null; // arreglo opcional para override de PRODUCTS en localStorage
 function formatPrice(num) { return new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(num); }
 function createProductCard(p) {
   const el = document.createElement('article');
@@ -45,7 +46,8 @@ function renderProducts() {
     if (src.includes('placehold.co')) return false;
     return true;
   };
-  const sorted = PRODUCTS.filter(hasRealImage).map((p, i) => ({ p, i }))
+  const base = Array.isArray(productsOverride) ? productsOverride : PRODUCTS;
+  const sorted = base.filter(hasRealImage).map((p, i) => ({ p, i }))
     .sort((a, b) => {
       const aLocal = String(a.p.img || '').startsWith('assets/img/catalogo/');
       const bLocal = String(b.p.img || '').startsWith('assets/img/catalogo/');
@@ -272,7 +274,8 @@ productsGrid?.addEventListener('click', (e) => {
   const id = Number(idAttr);
   if (!id) return;
   const action = btn.getAttribute('data-action');
-  const prod = PRODUCTS.find(p => p.id === id);
+  const base = Array.isArray(productsOverride) ? productsOverride : PRODUCTS;
+  const prod = base.find(p => p.id === id);
   if (!prod) return;
   if (action === 'buy') {
     addToCart(prod);
@@ -306,13 +309,132 @@ async function serverRemove(id) { if (!USE_SERVER) return; await api(`/cart.php?
 
 // Inicialización extendida
 loadState();
+// cargar override de productos desde localStorage
+const PROD_KEY = 'oxlaj_products_override';
+try { productsOverride = JSON.parse(localStorage.getItem(PROD_KEY) || 'null'); } catch { productsOverride = null; }
 renderProducts();
 renderTestimonials();
 syncCartFromServer().then(()=>renderCart());
 
 const navBarEl = document.querySelector('.nav');
-// Sitio público sin BD ni autenticación
+// Roles estáticos (sin BD)
+const navLogin = document.getElementById('navLogin');
+const navAdmin = document.getElementById('navAdmin');
+const secLogin = document.getElementById('login');
+const pageHeader = document.querySelector('header');
+const pageMain = document.querySelector('main');
+const pageFooter = document.querySelector('footer');
+const loginForm = document.getElementById('loginForm');
+const logoutBtn = document.getElementById('logoutBtn');
+
+const ROLE_KEY = 'oxlaj_role'; // 'cliente' | 'admin'
+function setRole(role){ localStorage.setItem(ROLE_KEY, role); }
+function getRole(){ return localStorage.getItem(ROLE_KEY); }
+function clearRole(){ localStorage.removeItem(ROLE_KEY); }
+
+function showSite(show){ [pageHeader,pageMain,pageFooter].forEach(el=>{ if(!el) return; el.style.display = show ? '' : 'none'; }); }
+function showLogin(){
+  if(secLogin) secLogin.style.display='';
+  showSite(false);
+  navAdmin && (navAdmin.style.display='none');
+  // si ya hay rol, permite cerrar sesión desde el login
+  const hasRole = !!getRole();
+  if (logoutBtn) logoutBtn.style.display = hasRole ? 'inline-flex' : 'none';
+  if (navLogin) navLogin.textContent='Ingresar';
+  const ap=document.getElementById('adminPanel'); if(ap) ap.style.display='none';
+  // preseleccionar el radio según rol actual
+  const current = getRole();
+  const radios = $$('input[name="rol"]', secLogin||document);
+  if (current && radios.length){
+    radios.forEach(r=>{ r.checked = (r.value === current); });
+  }
+}
+function afterLogin(role){ if(secLogin) secLogin.style.display='none'; showSite(true); navLogin && (navLogin.textContent = role==='admin'?'Admin':'Cliente'); logoutBtn && (logoutBtn.style.display='inline-flex'); navAdmin && (navAdmin.style.display = role==='admin'?'inline':'none'); const ap=document.getElementById('adminPanel'); if(ap) ap.style.display = role==='admin' ? '' : 'none'; }
+
 document.addEventListener('DOMContentLoaded', ()=>{
-  // sin cambios
+  const role = getRole();
+  if (!role) { showLogin(); }
+  else { afterLogin(role); }
+});
+
+navLogin?.addEventListener('click', (e)=>{
+  e.preventDefault();
+  showLogin();
+  // desplazar hacia el bloque de login
+  const target = document.getElementById('login');
+  if (target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+loginForm?.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const role = (new FormData(loginForm).get('rol')) || 'cliente';
+  setRole(role); afterLogin(role);
+});
+
+logoutBtn?.addEventListener('click', ()=>{ clearRole(); showLogin(); });
+
+// ------- Panel Administrador (estático) -------
+const prodFormEl = document.getElementById('prodForm');
+const pIdEl = document.getElementById('pId');
+const pTituloEl = document.getElementById('pTitulo');
+const pPrecioEl = document.getElementById('pPrecio');
+const pImagenEl = document.getElementById('pImagen');
+const pEtiquetasEl = document.getElementById('pEtiquetas');
+const btnEliminarEl = document.getElementById('btnEliminar');
+
+function saveProductsOverride(){
+  if (Array.isArray(productsOverride)) localStorage.setItem(PROD_KEY, JSON.stringify(productsOverride));
+  else localStorage.removeItem(PROD_KEY);
+}
+
+prodFormEl?.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const p = {
+    id: Number(pIdEl.value),
+    title: pTituloEl.value.trim(),
+    price: Number(pPrecioEl.value),
+    img: pImagenEl.value.trim(),
+    tags: (pEtiquetasEl.value||'').split(',').map(s=>s.trim()).filter(Boolean)
+  };
+  if (!p.id || !p.title) { showToast('Completa ID y Título'); return; }
+  if (!Array.isArray(productsOverride)) productsOverride = (PRODUCTS||[]).slice();
+  const idx = productsOverride.findIndex(x=>x.id===p.id);
+  if (idx>=0) productsOverride[idx] = p; else productsOverride.push(p);
+  saveProductsOverride();
+  renderProducts();
+  showToast('Producto guardado');
+});
+
+btnEliminarEl?.addEventListener('click', ()=>{
+  const id = Number(pIdEl?.value);
+  if (!id) return;
+  if (!Array.isArray(productsOverride)) productsOverride = (PRODUCTS||[]).slice();
+  productsOverride = productsOverride.filter(x=>x.id!==id);
+  // si override queda idéntico a PRODUCTS, limpiar
+  const sameLen = productsOverride.length === (PRODUCTS||[]).length;
+  const sameAll = sameLen && productsOverride.every((x, i)=>{
+    const y = PRODUCTS[i];
+    return y && x.id===y.id && x.title===y.title && x.price===y.price && x.img===y.img && JSON.stringify(x.tags||[])===JSON.stringify(y.tags||[]);
+  });
+  if (sameAll) productsOverride = null;
+  saveProductsOverride();
+  renderProducts();
+  showToast('Producto eliminado');
+});
+
+// Enlace del menú "Administrar"
+navAdmin?.addEventListener('click', (e)=>{
+  const role = getRole();
+  if (role !== 'admin') {
+    e.preventDefault();
+    showToast('Acceso solo para administradores');
+    return;
+  }
+  // abre el details del panel
+  const ap = document.getElementById('adminPanel');
+  if (ap) {
+    ap.style.display = '';
+    ap.open = true;
+  }
 });
 
