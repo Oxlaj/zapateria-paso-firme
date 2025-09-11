@@ -156,7 +156,8 @@ input:focus, textarea:focus { outline: 2px solid color-mix(in oklab, var(--prima
 .section-title { text-align: center; margin-bottom: 1rem; }
 
 /* Overlay selección de rol */
-.role-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 1.5rem; z-index: 3000; }
+.role-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.68); backdrop-filter: blur(12px) saturate(120%); display: flex; align-items: center; justify-content: center; padding: 1.5rem; z-index: 3000; transition: backdrop-filter .35s ease, background .35s ease; }
+body.role-overlay-open { overflow: hidden; }
 .role-overlay__panel { background: #fff; width: 100%; max-width: 760px; border-radius: 16px; padding: 2rem clamp(1.25rem, 3vw, 2.5rem); box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: popIn .35s ease; }
 .role-overlay__title { margin-top: 0; font-size: clamp(1.4rem, 2.2vw, 2rem); text-align: center; font-weight: 600; color: var(--primary); }
 .role-form { display: flex; flex-direction: column; gap: 1.5rem; }
