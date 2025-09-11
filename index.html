@@ -21,7 +21,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230b3d91'/%3E%3C/svg%3E" type="image/svg+xml">
 </head>
 <body>
-  <header class="header" id="inicio" style="display:none">
+  <header class="header" id="inicio">
     <nav class="nav container">
       <a href="#inicio" class="logo" aria-label="Inicio - Calzado Oxlaj"><img src="assets/img/logo-oxlaj.svg" alt="Logo Calzado Oxlaj"></a>
       <button class="nav__toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
@@ -54,22 +54,36 @@
     </section>
   </header>
 
-  <main style="display:none">
-    <section class="login container" id="login" aria-labelledby="login-title" style="display:none">
-      <h2 id="login-title">Elegir rol</h2>
-      <form id="loginForm" class="form" style="max-width:420px">
-        <div class="form__field">
-          <label>Selecciona cómo deseas ingresar</label>
-          <div style="display:flex; gap:1rem; align-items:center">
-            <label><input type="radio" name="rol" value="cliente" checked> Cliente</label>
-            <label><input type="radio" name="rol" value="admin"> Administrador</label>
+  <main>
+    <!-- Overlay selección de rol -->
+    <div id="roleOverlay" class="role-overlay" aria-modal="true" role="dialog" aria-label="Seleccionar rol" hidden>
+      <div class="role-overlay__panel">
+        <h2 class="role-overlay__title">Elige cómo ingresar</h2>
+        <form id="loginForm" class="role-form">
+          <div class="role-cards">
+            <label class="role-card">
+              <input type="radio" name="rol" value="cliente" checked>
+              <div class="role-card__body">
+                <h3>Cliente</h3>
+                <p>Explorar productos y realizar pedidos por WhatsApp.</p>
+              </div>
+            </label>
+            <label class="role-card">
+              <input type="radio" name="rol" value="admin">
+              <div class="role-card__body">
+                <h3>Administrador</h3>
+                <p>Gestionar catálogo estático (crear, editar, eliminar).</p>
+              </div>
+            </label>
           </div>
-        </div>
-        <button class="btn btn--primary" type="submit">Entrar</button>
-        <button class="btn btn--outline" type="button" id="logoutBtn" style="display:none">Cerrar sesión</button>
-        <small id="loginErr" class="error" aria-live="polite"></small>
-      </form>
-    </section>
+          <div class="role-actions">
+            <button class="btn btn--primary" type="submit">Ingresar</button>
+            <button class="btn btn--outline" type="button" id="logoutBtn" style="display:none">Cerrar sesión</button>
+          </div>
+          <small id="loginErr" class="error" aria-live="polite"></small>
+        </form>
+      </div>
+    </div>
     
     <section class="features container" aria-label="Beneficios">
       <article class="feature">
@@ -187,7 +201,7 @@
     </section>
   </main>
 
-  <footer class="footer" style="display:none">
+  <footer class="footer">
     <div class="container footer__grid">
       <div>
         <a href="#inicio" class="logo"><img src="assets/img/logo-oxlaj.svg" alt="Logo Calzado Oxlaj" style="height:28px"></a>

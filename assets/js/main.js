@@ -320,7 +320,7 @@ const navBarEl = document.querySelector('.nav');
 // Roles estáticos (sin BD)
 const navLogin = document.getElementById('navLogin');
 const navAdmin = document.getElementById('navAdmin');
-const secLogin = document.getElementById('login');
+const roleOverlay = document.getElementById('roleOverlay');
 const pageHeader = document.querySelector('header');
 const pageMain = document.querySelector('main');
 const pageFooter = document.querySelector('footer');
@@ -332,27 +332,27 @@ function setRole(role){ localStorage.setItem(ROLE_KEY, role); }
 function getRole(){ return localStorage.getItem(ROLE_KEY); }
 function clearRole(){ localStorage.removeItem(ROLE_KEY); }
 
-function showSite(show){ [pageHeader,pageMain,pageFooter].forEach(el=>{ if(!el) return; el.style.display = show ? '' : 'none'; }); }
+function showSite(show){
+  [pageHeader,pageMain,pageFooter].forEach(el=>{ if(!el) return; el.style.display = show ? '' : ''; }); // siempre visibles ahora
+}
 function showLogin(){
-  // Mostrar solo la pantalla de login: asegurar que <main> esté visible
-  if (secLogin) secLogin.style.display='';
-  if (pageMain) pageMain.style.display='';
-  if (pageHeader) pageHeader.style.display='none';
-  if (pageFooter) pageFooter.style.display='none';
+  if (roleOverlay) roleOverlay.hidden = false;
   navAdmin && (navAdmin.style.display='none');
-  // si ya hay rol, permite cerrar sesión desde el login
   const hasRole = !!getRole();
   if (logoutBtn) logoutBtn.style.display = hasRole ? 'inline-flex' : 'none';
   if (navLogin) navLogin.textContent='Ingresar';
   const ap=document.getElementById('adminPanel'); if(ap) ap.style.display='none';
-  // preseleccionar el radio según rol actual
   const current = getRole();
-  const radios = $$("input[name=\"rol\"]", secLogin||document);
-  if (current && radios.length){
-    radios.forEach(r=>{ r.checked = (r.value === current); });
-  }
+  const radios = $$('input[name="rol"]', roleOverlay||document);
+  if (current && radios.length){ radios.forEach(r=>{ r.checked = (r.value === current); }); }
 }
-function afterLogin(role){ if(secLogin) secLogin.style.display='none'; showSite(true); navLogin && (navLogin.textContent = role==='admin'?'Admin':'Cliente'); logoutBtn && (logoutBtn.style.display='inline-flex'); navAdmin && (navAdmin.style.display = role==='admin'?'inline':'none'); const ap=document.getElementById('adminPanel'); if(ap) ap.style.display = role==='admin' ? '' : 'none'; }
+function afterLogin(role){
+  if (roleOverlay) roleOverlay.hidden = true;
+  navLogin && (navLogin.textContent = role==='admin'?'Admin':'Cliente');
+  logoutBtn && (logoutBtn.style.display='inline-flex');
+  navAdmin && (navAdmin.style.display = role==='admin'?'inline':'none');
+  const ap=document.getElementById('adminPanel'); if(ap) ap.style.display = role==='admin' ? '' : 'none';
+}
 
 document.addEventListener('DOMContentLoaded', ()=>{
   const role = getRole();
@@ -360,13 +360,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   else { afterLogin(role); }
 });
 
-navLogin?.addEventListener('click', (e)=>{
-  e.preventDefault();
-  showLogin();
-  // desplazar hacia el bloque de login
-  const target = document.getElementById('login');
-  if (target) target.scrollIntoView({ behavior:'smooth', block:'start' });
-});
+navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 
 loginForm?.addEventListener('submit', (e)=>{
   e.preventDefault();
