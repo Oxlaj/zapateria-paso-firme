@@ -346,7 +346,13 @@ function showSite(show){
 }
 function showLogin(){
   if (roleOverlay) roleOverlay.hidden = false;
-  if (roleOverlay) { roleOverlay.style.display='flex'; roleOverlay.setAttribute('aria-hidden','false'); document.body.classList.add('role-overlay-open'); }
+  if (roleOverlay) {
+    roleOverlay.style.display='flex';
+    roleOverlay.style.opacity='1';
+    roleOverlay.style.pointerEvents='auto';
+    roleOverlay.removeAttribute('aria-hidden');
+    document.body.classList.add('role-overlay-open');
+  }
   navAdmin && (navAdmin.style.display='none');
   const hasRole = !!getRole();
   if (logoutBtn) logoutBtn.style.display = hasRole ? 'inline-flex' : 'none';
@@ -378,6 +384,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const role = getRole();
   if (!role) { showLogin(); }
   else { afterLogin(role); }
+
+  // Asegurar selección manual por si algún estilo bloquea el label
+  $$('.role-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      const inp = card.querySelector('input[name="rol"]');
+      if (inp) { inp.checked = true; }
+    });
+  });
 });
 
 navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
