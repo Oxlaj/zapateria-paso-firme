@@ -372,7 +372,8 @@ function afterLogin(role){
   navLogin && (navLogin.textContent = role==='admin'?'Admin':'Cliente');
   logoutBtn && (logoutBtn.style.display='inline-flex');
   navAdmin && (navAdmin.style.display = role==='admin'?'inline':'none');
-  const ap=document.getElementById('adminPanel'); if(ap) ap.style.display = role==='admin' ? '' : 'none';
+  const ap=document.getElementById('adminPanel'); if(ap) { ap.style.display = 'none'; ap.open = false; }
+  // Solo preparar datos; se mostrará al hacer clic en Administrar
   if (role==='admin') renderAdminTable();
   // Enfocar el contenido principal (productos) tras login
   const foco = document.getElementById('productos') || document.getElementById('inicio');
@@ -523,11 +524,19 @@ navAdmin?.addEventListener('click', (e)=>{
     showToast('Acceso solo para administradores');
     return;
   }
-  // abre el details del panel
+  e.preventDefault();
   const ap = document.getElementById('adminPanel');
   if (ap) {
-    ap.style.display = '';
-    ap.open = true;
+    const isHidden = ap.style.display === 'none' || ap.hasAttribute('hidden');
+    if (isHidden) {
+      ap.style.display='';
+      ap.open = true;
+      renderAdminTable();
+      ap.scrollIntoView({behavior:'smooth', block:'start'});
+    } else {
+      ap.open = false;
+      ap.style.display='none';
+    }
   }
 });
 
