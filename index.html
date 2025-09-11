@@ -11,6 +11,9 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://placehold.co/1200x630/png?text=Calzado+Oxlaj" />
   <meta name="theme-color" content="#0b3d91" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -18,7 +21,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230b3d91'/%3E%3C/svg%3E" type="image/svg+xml">
 </head>
 <body>
-  <header class="header" id="inicio">
+  <header class="header" id="inicio" style="display:none">
     <nav class="nav container">
       <a href="#inicio" class="logo" aria-label="Inicio - Calzado Oxlaj"><img src="assets/img/logo-oxlaj.svg" alt="Logo Calzado Oxlaj"></a>
       <button class="nav__toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
@@ -28,6 +31,8 @@
         <li><a href="#nosotros" class="nav__link">Nosotros</a></li>
         <li><a href="#opiniones" class="nav__link">Opiniones</a></li>
   <li><a href="#contacto" class="nav__link cta">Contacto</a></li>
+  <li><a href="#login" class="nav__link" id="navLogin">Ingresar</a></li>
+  <li><a href="#admin" class="nav__link" id="navAdmin" style="display:none">Administrar</a></li>
       </ul>
       <div class="nav__actions">
         <button id="cartBtn" class="nav__cart" aria-label="Abrir carrito" title="Carrito">🛒 <span id="cartCount" class="badge">0</span></button>
@@ -49,7 +54,22 @@
     </section>
   </header>
 
-  <main>
+  <main style="display:none">
+    <section class="login container" id="login" aria-labelledby="login-title" style="display:none">
+      <h2 id="login-title">Elegir rol</h2>
+      <form id="loginForm" class="form" style="max-width:420px">
+        <div class="form__field">
+          <label>Selecciona cómo deseas ingresar</label>
+          <div style="display:flex; gap:1rem; align-items:center">
+            <label><input type="radio" name="rol" value="cliente" checked> Cliente</label>
+            <label><input type="radio" name="rol" value="admin"> Administrador</label>
+          </div>
+        </div>
+        <button class="btn btn--primary" type="submit">Entrar</button>
+        <button class="btn btn--outline" type="button" id="logoutBtn" style="display:none">Cerrar sesión</button>
+        <small id="loginErr" class="error" aria-live="polite"></small>
+      </form>
+    </section>
     
     <section class="features container" aria-label="Beneficios">
       <article class="feature">
@@ -75,6 +95,33 @@
         <div class="products__grid" id="productsGrid">
           <!-- Productos generados por JS -->
         </div>
+        <details id="adminPanel" style="margin-top:1rem; display:none">
+          <summary>Panel Administrador (estático)</summary>
+          <form id="prodForm" class="form" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:1rem; align-items:end; margin-top:1rem">
+            <div class="form__field">
+              <label for="pId">ID</label>
+              <input id="pId" type="number" min="1" required>
+            </div>
+            <div class="form__field">
+              <label for="pTitulo">Título</label>
+              <input id="pTitulo" type="text" required>
+            </div>
+            <div class="form__field">
+              <label for="pPrecio">Precio</label>
+              <input id="pPrecio" type="number" step="0.01" min="0" required>
+            </div>
+            <div class="form__field">
+              <label for="pImagen">Imagen</label>
+              <input id="pImagen" type="text" placeholder="assets/img/...">
+            </div>
+            <div class="form__field">
+              <label for="pEtiquetas">Etiquetas</label>
+              <input id="pEtiquetas" type="text" placeholder="casual,deporte">
+            </div>
+            <button class="btn btn--primary" id="btnGuardar" type="submit">Guardar</button>
+            <button class="btn btn--outline" id="btnEliminar" type="button">Eliminar</button>
+          </form>
+        </details>
       </div>
     </section>
 
@@ -184,7 +231,7 @@
   <!-- Toasts -->
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="./assets/js/data.js" defer></script>
-  <script src="./assets/js/main.js" defer></script>
+  <script src="./assets/js/data.js?v=20250911" defer></script>
+  <script src="./assets/js/main.js?v=20250911" defer></script>
 </body>
 </html>
