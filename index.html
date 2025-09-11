@@ -76,6 +76,14 @@
               </div>
             </label>
           </div>
+          <div class="form__field" style="margin-top:.25rem">
+            <label for="rolePassword">Contraseña</label>
+            <div class="password-field">
+              <input id="rolePassword" type="password" autocomplete="current-password" placeholder="Ingresa la contraseña" required>
+              <button type="button" class="pw-toggle" aria-label="Mostrar contraseña" id="pwToggle">👁</button>
+            </div>
+            <small class="error" id="pwError" aria-live="polite"></small>
+          </div>
           <div class="role-actions">
             <button class="btn btn--primary" type="submit">Ingresar</button>
             <button class="btn btn--outline" type="button" id="logoutBtn" style="display:none">Cerrar sesión</button>

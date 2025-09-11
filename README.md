@@ -17,6 +17,13 @@ Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y con
    - Campos: ID, Título, Precio, Imagen (ruta como assets/img/...), Etiquetas (separadas por comas).
    - Para resetear los cambios de productos, borra el almacenamiento del navegador (localStorage) o cambia de navegador.
 
+### Contraseñas de roles
+Se validan de forma local (solo frontend, no seguro para producción):
+- Cliente: `cliente123`
+- Administrador: `admin123`
+
+Cómo cambiarlas: editar el objeto `ROLE_PASSWORDS` en `assets/js/main.js`.
+
 Nota: El backend en PHP/MySQL existe en la carpeta `api/`, pero está deshabilitado desde el frontend (USE_SERVER=false).
 
 ## Estructura

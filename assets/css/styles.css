@@ -154,3 +154,27 @@ input:focus, textarea:focus { outline: 2px solid color-mix(in oklab, var(--prima
 
 /* ===== Utilities ===== */
 .section-title { text-align: center; margin-bottom: 1rem; }
+
+/* Overlay selección de rol */
+.role-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 1.5rem; z-index: 3000; }
+.role-overlay__panel { background: #fff; width: 100%; max-width: 760px; border-radius: 16px; padding: 2rem clamp(1.25rem, 3vw, 2.5rem); box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: popIn .35s ease; }
+.role-overlay__title { margin-top: 0; font-size: clamp(1.4rem, 2.2vw, 2rem); text-align: center; font-weight: 600; color: var(--primary); }
+.role-form { display: flex; flex-direction: column; gap: 1.5rem; }
+.role-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.role-card { position: relative; cursor: pointer; border: 2px solid #d9e1ec; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, #f7faff, #eef3f9); transition: .25s; display: flex; }
+.role-card input { position: absolute; opacity: 0; pointer-events: none; }
+.role-card__body { padding: 1rem 1.1rem 1.25rem; display: flex; flex-direction: column; gap: .35rem; }
+.role-card h3 { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--primary); }
+.role-card p { margin: 0; font-size: .85rem; line-height: 1.3; color: var(--gray-700); }
+.role-card:hover { border-color: var(--primary); box-shadow: 0 4px 14px -4px rgba(15, 67, 160, .3); }
+.role-card input:checked + .role-card__body, .role-card:has(input:checked) { background: var(--primary); color: #fff; }
+.role-card:has(input:checked) h3 { color: #fff; }
+.role-actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+@keyframes popIn { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .role-overlay__panel { animation: none; } }
+
+/* Password field */
+.password-field { position: relative; display: flex; align-items: center; }
+.password-field input { flex: 1; padding-right: 2.5rem; }
+.pw-toggle { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); background: var(--primary); color: #fff; border: none; padding: .35rem .55rem; border-radius: 6px; cursor: pointer; font-size: .75rem; line-height: 1; }
+.pw-toggle:hover { background: var(--primary-600); }

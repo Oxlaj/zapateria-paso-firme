@@ -326,6 +326,15 @@ const pageMain = document.querySelector('main');
 const pageFooter = document.querySelector('footer');
 const loginForm = document.getElementById('loginForm');
 const logoutBtn = document.getElementById('logoutBtn');
+const rolePasswordInput = document.getElementById('rolePassword');
+const pwError = document.getElementById('pwError');
+const pwToggle = document.getElementById('pwToggle');
+
+// Contraseñas estáticas (pueden cambiarse luego a backend)
+const ROLE_PASSWORDS = {
+  cliente: 'cliente123',
+  admin: 'admin123'
+};
 
 const ROLE_KEY = 'oxlaj_role'; // 'cliente' | 'admin'
 function setRole(role){ localStorage.setItem(ROLE_KEY, role); }
@@ -364,11 +373,25 @@ navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 
 loginForm?.addEventListener('submit', (e)=>{
   e.preventDefault();
-  const role = (new FormData(loginForm).get('rol')) || 'cliente';
+  const fd = new FormData(loginForm);
+  const role = (fd.get('rol')) || 'cliente';
+  const entered = rolePasswordInput ? rolePasswordInput.value.trim() : '';
+  const expected = ROLE_PASSWORDS[role];
+  if (!entered) { pwError && (pwError.textContent='Ingresa la contraseña'); return; }
+  if (entered !== expected) { pwError && (pwError.textContent='Contraseña incorrecta'); return; }
+  pwError && (pwError.textContent='');
   setRole(role); afterLogin(role);
+  if (rolePasswordInput) rolePasswordInput.value='';
 });
 
 logoutBtn?.addEventListener('click', ()=>{ clearRole(); showLogin(); });
+
+pwToggle?.addEventListener('click', ()=>{
+  if (!rolePasswordInput) return;
+  const t = rolePasswordInput.getAttribute('type')==='password' ? 'text' : 'password';
+  rolePasswordInput.setAttribute('type', t);
+  pwToggle.textContent = t==='password' ? '👁' : '🙈';
+});
 
 // ------- Panel Administrador (estático) -------
 const prodFormEl = document.getElementById('prodForm');
