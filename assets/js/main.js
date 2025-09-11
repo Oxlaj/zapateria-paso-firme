@@ -346,6 +346,7 @@ function showSite(show){
 }
 function showLogin(){
   if (roleOverlay) roleOverlay.hidden = false;
+  if (roleOverlay) { roleOverlay.style.display='flex'; roleOverlay.setAttribute('aria-hidden','false'); document.body.classList.add('role-overlay-open'); }
   navAdmin && (navAdmin.style.display='none');
   const hasRole = !!getRole();
   if (logoutBtn) logoutBtn.style.display = hasRole ? 'inline-flex' : 'none';
@@ -356,11 +357,21 @@ function showLogin(){
   if (current && radios.length){ radios.forEach(r=>{ r.checked = (r.value === current); }); }
 }
 function afterLogin(role){
-  if (roleOverlay) roleOverlay.hidden = true;
+  if (roleOverlay) {
+    roleOverlay.setAttribute('aria-hidden','true');
+    roleOverlay.style.opacity='0';
+    roleOverlay.style.pointerEvents='none';
+    setTimeout(()=>{ if(roleOverlay){ roleOverlay.hidden=true; roleOverlay.style.display='none'; roleOverlay.style.opacity=''; document.body.classList.remove('role-overlay-open'); } },250);
+  }
   navLogin && (navLogin.textContent = role==='admin'?'Admin':'Cliente');
   logoutBtn && (logoutBtn.style.display='inline-flex');
   navAdmin && (navAdmin.style.display = role==='admin'?'inline':'none');
   const ap=document.getElementById('adminPanel'); if(ap) ap.style.display = role==='admin' ? '' : 'none';
+  // Enfocar el contenido principal (productos) tras login
+  const foco = document.getElementById('productos') || document.getElementById('inicio');
+  if (foco) {
+    setTimeout(()=> foco.scrollIntoView({behavior:'smooth', block:'start'}), 300);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
