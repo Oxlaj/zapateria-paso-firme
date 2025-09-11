@@ -373,6 +373,7 @@ function afterLogin(role){
   logoutBtn && (logoutBtn.style.display='inline-flex');
   navAdmin && (navAdmin.style.display = role==='admin'?'inline':'none');
   const ap=document.getElementById('adminPanel'); if(ap) ap.style.display = role==='admin' ? '' : 'none';
+  if (role==='admin') renderAdminTable();
   // Enfocar el contenido principal (productos) tras login
   const foco = document.getElementById('productos') || document.getElementById('inicio');
   if (foco) {
@@ -392,6 +393,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if (inp) { inp.checked = true; }
     });
   });
+  if (getRole()==='admin') renderAdminTable();
 });
 
 navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
@@ -423,13 +425,39 @@ const prodFormEl = document.getElementById('prodForm');
 const pIdEl = document.getElementById('pId');
 const pTituloEl = document.getElementById('pTitulo');
 const pPrecioEl = document.getElementById('pPrecio');
+const pStockEl = document.getElementById('pStock');
 const pImagenEl = document.getElementById('pImagen');
 const pEtiquetasEl = document.getElementById('pEtiquetas');
 const btnEliminarEl = document.getElementById('btnEliminar');
+const adminTable = document.getElementById('adminTable');
 
 function saveProductsOverride(){
   if (Array.isArray(productsOverride)) localStorage.setItem(PROD_KEY, JSON.stringify(productsOverride));
   else localStorage.removeItem(PROD_KEY);
+}
+
+function normalizeProduct(p){
+  return {
+    id: Number(p.id),
+    title: String(p.title||'').trim(),
+    price: Number(p.price)||0,
+    img: String(p.img||'').trim(),
+    stock: Number(p.stock) >=0 ? Number(p.stock) : 0,
+    tags: Array.isArray(p.tags) ? p.tags : []
+  };
+}
+
+function renderAdminTable(){
+  if (!adminTable) return;
+  const tbody = adminTable.querySelector('tbody');
+  if (!tbody) return;
+  const base = Array.isArray(productsOverride) ? productsOverride : PRODUCTS;
+  tbody.innerHTML = '';
+  base.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.id}</td><td>${p.title}</td><td>${formatPrice(p.price)}</td><td>${p.stock??0}</td><td>${(p.tags||[]).join(', ')}</td><td><button class="admin-edit" data-id="${p.id}">Editar</button></td>`;
+    tbody.appendChild(tr);
+  });
 }
 
 prodFormEl?.addEventListener('submit', (e)=>{
@@ -438,6 +466,7 @@ prodFormEl?.addEventListener('submit', (e)=>{
     id: Number(pIdEl.value),
     title: pTituloEl.value.trim(),
     price: Number(pPrecioEl.value),
+    stock: Number(pStockEl?.value||0),
     img: pImagenEl.value.trim(),
     tags: (pEtiquetasEl.value||'').split(',').map(s=>s.trim()).filter(Boolean)
   };
@@ -447,6 +476,7 @@ prodFormEl?.addEventListener('submit', (e)=>{
   if (idx>=0) productsOverride[idx] = p; else productsOverride.push(p);
   saveProductsOverride();
   renderProducts();
+  renderAdminTable();
   showToast('Producto guardado');
 });
 
@@ -464,7 +494,25 @@ btnEliminarEl?.addEventListener('click', ()=>{
   if (sameAll) productsOverride = null;
   saveProductsOverride();
   renderProducts();
+  renderAdminTable();
   showToast('Producto eliminado');
+});
+
+adminTable?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('button.admin-edit');
+  if (!btn) return;
+  const id = Number(btn.getAttribute('data-id'));
+  const base = Array.isArray(productsOverride) ? productsOverride : PRODUCTS;
+  const prod = base.find(p=>p.id===id);
+  if (!prod) return;
+  pIdEl.value = prod.id;
+  pTituloEl.value = prod.title;
+  pPrecioEl.value = prod.price;
+  if (pStockEl) pStockEl.value = prod.stock ?? 0;
+  pImagenEl.value = prod.img;
+  pEtiquetasEl.value = (prod.tags||[]).join(',');
+  showToast('Producto cargado para edición');
+  pTituloEl.focus();
 });
 
 // Enlace del menú "Administrar"

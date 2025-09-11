@@ -179,3 +179,12 @@ body.role-overlay-open { overflow: hidden; }
 .password-field input { flex: 1; padding-right: 2.5rem; }
 .pw-toggle { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); background: var(--primary); color: #fff; border: none; padding: .35rem .55rem; border-radius: 6px; cursor: pointer; font-size: .75rem; line-height: 1; }
 .pw-toggle:hover { background: var(--primary-600); }
+
+/* Admin table */
+.admin-table-wrapper { margin-top:1.25rem; overflow:auto; border:1px solid var(--gray-200); border-radius:.75rem; background:#fff; }
+.admin-table { width:100%; border-collapse:collapse; font-size:.85rem; min-width:680px; }
+.admin-table th, .admin-table td { padding:.6rem .65rem; text-align:left; border-bottom:1px solid var(--gray-200); }
+.admin-table th { background:var(--light); font-weight:600; font-size:.75rem; letter-spacing:.5px; text-transform:uppercase; }
+.admin-table tbody tr:hover { background:#f3f7ff; }
+.admin-table button.admin-edit { background:var(--primary); color:#fff; border:none; padding:.4rem .75rem; border-radius:.5rem; cursor:pointer; font-size:.7rem; }
+.admin-table button.admin-edit:hover { background:var(--primary-600); }
