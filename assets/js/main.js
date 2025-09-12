@@ -1,3 +1,10 @@
+console.log('Calzado Oxlaj main.js v20250912');
+// Version badge helper
+(()=>{
+  const vEl = document.getElementById('buildVersion');
+  if (vEl) vEl.textContent = 'v20250912';
+  else console.warn('[CalzadoOxlaj] buildVersion element no encontrado (HTML antiguo en caché)');
+})();
 // Utilidades
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -24,17 +31,26 @@ function createProductCard(p) {
   const el = document.createElement('article');
   el.className = 'product';
   el.setAttribute('data-id', String(p.id));
+  const isAdmin = getRole && getRole() === 'admin';
   el.innerHTML = `
     <img class="product__img" src="${p.img}" alt="${p.title}" loading="lazy"/>
     <div class="product__body">
       <h3 class="product__title">${p.title}</h3>
       <div class="product__price">${formatPrice(p.price)}</div>
-      <div class="product__tags">${p.tags.map(t => `<span class='tag'>${t}</span>`).join('')}</div>
+      <div class="product__tags">${(p.tags||[]).map(t => `<span class='tag'>${t}</span>`).join('')}</div>
     </div>
-    <div class="product__actions">
+    <div class="product__actions" ${isAdmin? 'style="display:none"':''}>
       <button class="btn btn--outline" data-action="wish" data-id="${p.id}" aria-label="Agregar a favoritos">❤ Favorito</button>
       <button class="btn btn--primary" data-action="buy" data-id="${p.id}" aria-label="Agregar al carrito">🛒 Agregar</button>
     </div>`;
+  if (isAdmin) {
+    const adminBar = document.createElement('div');
+    adminBar.className = 'product__adminBar';
+    adminBar.innerHTML = `
+      <button class="btn btn--xs" data-admin="edit" data-id="${p.id}">✏️ Editar</button>
+      <button class="btn btn--xs btn--danger" data-admin="del" data-id="${p.id}">🗑 Eliminar</button>`;
+    el.appendChild(adminBar);
+  }
   return el;
 }
 function renderProducts() {
@@ -47,15 +63,38 @@ function renderProducts() {
     return true;
   };
   const base = Array.isArray(productsOverride) ? productsOverride : PRODUCTS;
-  const sorted = base.filter(hasRealImage).map((p, i) => ({ p, i }))
-    .sort((a, b) => {
+  let list = base.filter(hasRealImage);
+  // Filtro admin
+  const isAdmin = getRole && getRole()==='admin';
+  if(isAdmin && window.__adminFilter){
+    const q = window.__adminFilter.toLowerCase();
+    if(q){
+      list = list.filter(p=> [p.title, ...(p.tags||[]), String(p.price)].some(v=> String(v).toLowerCase().includes(q)) );
+    }
+  }
+  // Orden admin
+  if(isAdmin && window.__adminSort){
+    const { key, dir } = window.__adminSort;
+    list = [...list].sort((a,b)=>{
+      let av = a[key]; let bv = b[key];
+      if(Array.isArray(av)) av = av.join(',');
+      if(Array.isArray(bv)) bv = bv.join(',');
+      if(typeof av === 'string') av = av.toLowerCase();
+      if(typeof bv === 'string') bv = bv.toLowerCase();
+      if(av < bv) return dir==='asc'? -1:1;
+      if(av > bv) return dir==='asc'? 1:-1;
+      return 0;
+    });
+  } else {
+    // Orden original estable por índice + prioridad imágenes locales
+    list = list.map((p,i)=>({p,i})).sort((a,b)=>{
       const aLocal = String(a.p.img || '').startsWith('assets/img/catalogo/');
       const bLocal = String(b.p.img || '').startsWith('assets/img/catalogo/');
       if (aLocal !== bLocal) return aLocal ? -1 : 1;
-      return a.i - b.i; // orden estable para el resto
-    })
-    .map(x => x.p);
-  sorted.forEach(p => productsGrid.appendChild(createProductCard(p)));
+      return a.i - b.i;
+    }).map(x=>x.p);
+  }
+  list.forEach(p => productsGrid.appendChild(createProductCard(p)));
   updateFavButtons();
 }
 
@@ -316,10 +355,17 @@ renderProducts();
 renderTestimonials();
 syncCartFromServer().then(()=>renderCart());
 
+// Escuchar cambios de productos en otras pestañas (sin backend) y refrescar
+window.addEventListener('storage', (e)=>{
+  if (e.key === 'oxlaj_products_override') {
+    try { productsOverride = JSON.parse(e.newValue||'null'); } catch { productsOverride = null; }
+    renderProducts();
+  }
+});
+
 const navBarEl = document.querySelector('.nav');
 // Roles estáticos (sin BD)
 const navLogin = document.getElementById('navLogin');
-const navAdmin = document.getElementById('navAdmin');
 const roleOverlay = document.getElementById('roleOverlay');
 const pageHeader = document.querySelector('header');
 const pageMain = document.querySelector('main');
@@ -353,11 +399,9 @@ function showLogin(){
     roleOverlay.removeAttribute('aria-hidden');
     document.body.classList.add('role-overlay-open');
   }
-  navAdmin && (navAdmin.style.display='none');
   const hasRole = !!getRole();
   if (logoutBtn) logoutBtn.style.display = hasRole ? 'inline-flex' : 'none';
   if (navLogin) navLogin.textContent='Ingresar';
-  const ap=document.getElementById('adminPanel'); if(ap) ap.style.display='none';
   const current = getRole();
   const radios = $$('input[name="rol"]', roleOverlay||document);
   if (current && radios.length){ radios.forEach(r=>{ r.checked = (r.value === current); }); }
@@ -371,15 +415,16 @@ function afterLogin(role){
   }
   navLogin && (navLogin.textContent = role==='admin'?'Admin':'Cliente');
   logoutBtn && (logoutBtn.style.display='inline-flex');
-  navAdmin && (navAdmin.style.display = role==='admin'?'inline':'none');
-  const ap=document.getElementById('adminPanel'); if(ap) { ap.style.display = 'none'; ap.open = false; }
-  // Solo preparar datos; se mostrará al hacer clic en Administrar
-  if (role==='admin') renderAdminTable();
+  // (enlace admin removido de la navegación)
   // Enfocar el contenido principal (productos) tras login
   const foco = document.getElementById('productos') || document.getElementById('inicio');
   if (foco) {
     setTimeout(()=> foco.scrollIntoView({behavior:'smooth', block:'start'}), 300);
   }
+  document.body.classList.toggle('is-admin', role==='admin');
+  // Re-render para aplicar modo admin (oculta acciones, agrega barra admin)
+  renderProducts();
+  setupRoleUI();
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -394,7 +439,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if (inp) { inp.checked = true; }
     });
   });
-  if (getRole()==='admin') renderAdminTable();
+  // nada adicional específico al cargar si es admin (CRUD inline se inyecta al renderizar)
 });
 
 navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
@@ -421,122 +466,286 @@ pwToggle?.addEventListener('click', ()=>{
   pwToggle.textContent = t==='password' ? '👁' : '🙈';
 });
 
-// ------- Panel Administrador (estático) -------
-const prodFormEl = document.getElementById('prodForm');
-const pIdEl = document.getElementById('pId');
-const pTituloEl = document.getElementById('pTitulo');
-const pPrecioEl = document.getElementById('pPrecio');
-const pStockEl = document.getElementById('pStock');
-const pImagenEl = document.getElementById('pImagen');
-const pEtiquetasEl = document.getElementById('pEtiquetas');
-const btnEliminarEl = document.getElementById('btnEliminar');
-const adminTable = document.getElementById('adminTable');
+// (no existe enlace directo a un panel separado: CRUD es inline)
 
-function saveProductsOverride(){
-  if (Array.isArray(productsOverride)) localStorage.setItem(PROD_KEY, JSON.stringify(productsOverride));
-  else localStorage.removeItem(PROD_KEY);
-}
+// ---------- MODO ADMIN: CRUD INLINE ----------
+// (usar PROD_KEY ya definido arriba)
+function currentProducts(){ return Array.isArray(productsOverride) ? productsOverride : PRODUCTS; }
+function ensureOverride(){ if(!Array.isArray(productsOverride)) { productsOverride = PRODUCTS.map(p=>({...p})); } }
+function persistProducts(){ localStorage.setItem(PROD_KEY, JSON.stringify(productsOverride)); }
 
-function normalizeProduct(p){
-  return {
-    id: Number(p.id),
-    title: String(p.title||'').trim(),
-    price: Number(p.price)||0,
-    img: String(p.img||'').trim(),
-    stock: Number(p.stock) >=0 ? Number(p.stock) : 0,
-    tags: Array.isArray(p.tags) ? p.tags : []
-  };
-}
-
-function renderAdminTable(){
-  if (!adminTable) return;
-  const tbody = adminTable.querySelector('tbody');
-  if (!tbody) return;
-  const base = Array.isArray(productsOverride) ? productsOverride : PRODUCTS;
-  tbody.innerHTML = '';
-  base.forEach(p=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${p.id}</td><td>${p.title}</td><td>${formatPrice(p.price)}</td><td>${p.stock??0}</td><td>${(p.tags||[]).join(', ')}</td><td><button class="admin-edit" data-id="${p.id}">Editar</button></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-prodFormEl?.addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const p = {
-    id: Number(pIdEl.value),
-    title: pTituloEl.value.trim(),
-    price: Number(pPrecioEl.value),
-    stock: Number(pStockEl?.value||0),
-    img: pImagenEl.value.trim(),
-    tags: (pEtiquetasEl.value||'').split(',').map(s=>s.trim()).filter(Boolean)
-  };
-  if (!p.id || !p.title) { showToast('Completa ID y Título'); return; }
-  if (!Array.isArray(productsOverride)) productsOverride = (PRODUCTS||[]).slice();
-  const idx = productsOverride.findIndex(x=>x.id===p.id);
-  if (idx>=0) productsOverride[idx] = p; else productsOverride.push(p);
-  saveProductsOverride();
-  renderProducts();
-  renderAdminTable();
-  showToast('Producto guardado');
-});
-
-btnEliminarEl?.addEventListener('click', ()=>{
-  const id = Number(pIdEl?.value);
-  if (!id) return;
-  if (!Array.isArray(productsOverride)) productsOverride = (PRODUCTS||[]).slice();
-  productsOverride = productsOverride.filter(x=>x.id!==id);
-  // si override queda idéntico a PRODUCTS, limpiar
-  const sameLen = productsOverride.length === (PRODUCTS||[]).length;
-  const sameAll = sameLen && productsOverride.every((x, i)=>{
-    const y = PRODUCTS[i];
-    return y && x.id===y.id && x.title===y.title && x.price===y.price && x.img===y.img && JSON.stringify(x.tags||[])===JSON.stringify(y.tags||[]);
-  });
-  if (sameAll) productsOverride = null;
-  saveProductsOverride();
-  renderProducts();
-  renderAdminTable();
-  showToast('Producto eliminado');
-});
-
-adminTable?.addEventListener('click', (e)=>{
-  const btn = e.target.closest('button.admin-edit');
-  if (!btn) return;
-  const id = Number(btn.getAttribute('data-id'));
-  const base = Array.isArray(productsOverride) ? productsOverride : PRODUCTS;
-  const prod = base.find(p=>p.id===id);
-  if (!prod) return;
-  pIdEl.value = prod.id;
-  pTituloEl.value = prod.title;
-  pPrecioEl.value = prod.price;
-  if (pStockEl) pStockEl.value = prod.stock ?? 0;
-  pImagenEl.value = prod.img;
-  pEtiquetasEl.value = (prod.tags||[]).join(',');
-  showToast('Producto cargado para edición');
-  pTituloEl.focus();
-});
-
-// Enlace del menú "Administrar"
-navAdmin?.addEventListener('click', (e)=>{
-  const role = getRole();
-  if (role !== 'admin') {
-    e.preventDefault();
-    showToast('Acceso solo para administradores');
-    return;
-  }
-  e.preventDefault();
-  const ap = document.getElementById('adminPanel');
-  if (ap) {
-    const isHidden = ap.style.display === 'none' || ap.hasAttribute('hidden');
-    if (isHidden) {
-      ap.style.display='';
-      ap.open = true;
-      renderAdminTable();
-      ap.scrollIntoView({behavior:'smooth', block:'start'});
-    } else {
-      ap.open = false;
-      ap.style.display='none';
+function setupRoleUI(){
+  if (!productsGrid) return;
+  const isAdmin = getRole() === 'admin';
+  // Insertar barra admin si hace falta
+  let bar = document.getElementById('adminCatalogBar');
+  if (isAdmin){
+    if (!bar){
+      bar = document.createElement('div');
+      bar.id = 'adminCatalogBar';
+      bar.innerHTML = `
+        <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;width:100%">
+          <strong style="flex:1 1 160px">Modo administrador</strong>
+          <input id="adminSearch" type="search" placeholder="Buscar..." style="flex:2 1 200px;min-width:140px;padding:.45rem .6rem;border:1px solid #b8c2cc;border-radius:6px;font-size:.8rem"/>
+          <select id="adminSortKey" style="padding:.4rem .5rem;border:1px solid #b8c2cc;border-radius:6px;font-size:.75rem">
+            <option value="title">Título</option>
+            <option value="price">Precio</option>
+            <option value="id">ID</option>
+          </select>
+          <button type="button" class="btn btn--outline" id="adminSortDir" data-dir="asc" style="font-size:.7rem">ASC</button>
+          <button type="button" class="btn btn--outline" data-admin="add">➕ Añadir</button>
+        </div>
+        <small style="opacity:.7;display:block;margin-top:.4rem">Edición inline · Cambios locales (no servidor)</small>
+      `;
+      productsGrid.parentElement?.insertBefore(bar, productsGrid);
+      // Estado inicial sort
+      window.__adminSort = { key: 'title', dir: 'asc' };
+      window.__adminFilter = '';
+      bar.querySelector('#adminSearch').addEventListener('input', (e)=>{ window.__adminFilter = e.target.value.trim(); renderProducts(); });
+      bar.querySelector('#adminSortKey').addEventListener('change', (e)=>{ window.__adminSort.key = e.target.value; renderProducts(); });
+      bar.querySelector('#adminSortDir').addEventListener('click', (e)=>{ const btn=e.currentTarget; const d=btn.getAttribute('data-dir')==='asc'?'desc':'asc'; btn.setAttribute('data-dir',d); btn.textContent=d.toUpperCase(); window.__adminSort.dir=d; renderProducts(); });
     }
+  } else {
+    if (bar) bar.remove();
+  }
+  // Ocultar / mostrar carrito
+  const cartRelated = [cartBtn, drawer, drawerOverlay];
+  cartRelated.forEach(el=>{ if(!el) return; el.style.display = isAdmin ? 'none':'', el.hidden = isAdmin? true:false; });
+}
+
+function htmlEscape(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function enterEdit(id){
+  const card = productsGrid.querySelector(`.product[data-id='${id}']`);
+  if (!card) return;
+  const prod = currentProducts().find(p=>p.id===id);
+  if (!prod) return;
+  card.classList.add('editing');
+  card.innerHTML = `
+    <form class="product-edit" data-id="${id}" onsubmit="return false;">
+      <label class="pe-field">Título<br><input name="title" value="${htmlEscape(prod.title)}" required></label>
+      <label class="pe-field">Precio<br><input name="price" type="number" step="0.01" value="${prod.price}" required></label>
+      <label class="pe-field">Imagen URL<br><input name="img" value="${htmlEscape(prod.img)}" required></label>
+      <div class="pe-preview"><img alt="Vista previa" src="${htmlEscape(prod.img)}"/></div>
+      <label class="pe-field">Etiquetas (coma)<br><input name="tags" value="${htmlEscape((prod.tags||[]).join(', '))}"></label>
+      <div class="edit__actions">
+        <button class="btn btn--primary" type="button" data-admin="save" data-id="${id}">Guardar</button>
+        <button class="btn btn--outline" type="button" data-admin="cancel" data-id="${id}">Cancelar</button>
+      </div>
+    </form>`;
+  initEditForm(card.querySelector('form.product-edit'));
+}
+
+function cancelEdit(){ renderProducts(); }
+
+function saveEdit(id){
+  const form = productsGrid.querySelector(`form.product-edit[data-id='${id}']`);
+  if(!form) return;
+  const fd = new FormData(form);
+  const title = String(fd.get('title')||'').trim();
+  const price = parseFloat(String(fd.get('price')||'0'));
+  const img = String(fd.get('img')||'').trim();
+  const tagsStr = String(fd.get('tags')||'').trim();
+  if(!title || !(price>0) || !img){ showToast('Completa los campos'); return; }
+  const tags = tagsStr? tagsStr.split(',').map(t=>t.trim()).filter(Boolean):[];
+  ensureOverride();
+  const idx = productsOverride.findIndex(p=>p.id===id);
+  if(idx<0) return;
+  productsOverride[idx] = { ...productsOverride[idx], title, price, img, tags };
+  persistProducts();
+  showToast('Producto actualizado');
+  renderProducts();
+  setupRoleUI();
+}
+
+function deleteProduct(id){
+  const prod = currentProducts().find(p=>p.id===id);
+  customConfirm(`¿Eliminar el producto "${prod?prod.title:''}"?`).then(ok=>{
+    if(!ok) return;
+    ensureOverride();
+    productsOverride = productsOverride.filter(p=>p.id!==id);
+    persistProducts();
+    showToast('Producto eliminado');
+    renderProducts();
+    setupRoleUI();
+  });
+}
+
+function toggleAddForm(){
+  let form = document.getElementById('adminAddForm');
+  if(form){ form.remove(); return; }
+  form = document.createElement('form');
+  form.id='adminAddForm';
+  form.className='admin-add-form';
+  form.innerHTML = `
+    <label>Título <input name="title" required></label>
+    <label>Precio <input name="price" type="number" step="0.01" required></label>
+    <label>Imagen URL <input name="img" required></label>
+    <div class="pe-preview"><img alt="Vista previa" hidden/></div>
+    <label>Etiquetas (coma) <input name="tags"></label>
+    <div>
+      <button type="button" class="btn btn--primary" data-admin="add-save">Guardar nuevo</button>
+      <button type="button" class="btn btn--outline" data-admin="add-cancel">Cancelar</button>
+    </div>`;
+  const bar = document.getElementById('adminCatalogBar');
+  bar?.insertAdjacentElement('afterend', form);
+  initEditForm(form);
+}
+
+function saveNewProduct(){
+  const form = document.getElementById('adminAddForm');
+  if(!form) return;
+  const fd = new FormData(form);
+  const title = String(fd.get('title')||'').trim();
+  const price = parseFloat(String(fd.get('price')||'0'));
+  const img = String(fd.get('img')||'').trim();
+  const tagsStr = String(fd.get('tags')||'').trim();
+  const preview = form.querySelector('.pe-preview img');
+  if(!title || !(price>0) || !img){ showToast('Completa los campos'); return; }
+  if(preview && preview.dataset.valid==='no'){ showToast('Imagen no válida'); return; }
+  const tags = tagsStr? tagsStr.split(',').map(t=>t.trim()).filter(Boolean):[];
+  ensureOverride();
+  const nextId = currentProducts().reduce((m,p)=> Math.max(m,p.id),0)+1;
+  productsOverride.push({ id: nextId, title, price, img, tags });
+  persistProducts();
+  form.remove();
+  showToast('Producto creado');
+  renderProducts();
+  setupRoleUI();
+}
+
+// Delegación global para acciones admin
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-admin]');
+  if(!btn) return;
+  if(getRole() !== 'admin') return; // seguridad extra
+  const action = btn.getAttribute('data-admin');
+  const id = Number(btn.getAttribute('data-id')) || null;
+  switch(action){
+    case 'edit': if(id) enterEdit(id); break;
+    case 'del': if(id) deleteProduct(id); break;
+    case 'save': if(id) saveEdit(id); break;
+    case 'cancel': cancelEdit(); break;
+    case 'add': toggleAddForm(); break;
+    case 'add-save': saveNewProduct(); break;
+    case 'add-cancel': toggleAddForm(); break;
   }
 });
+
+// Inject minimal styles for admin inline CRUD (solo una vez)
+(function addAdminStyles(){
+  if(document.getElementById('adminInlineStyles')) return;
+  const css = `body.is-admin .product__actions{display:none}#adminCatalogBar{background:#0D1B2A;color:#fff;padding:.75rem 1rem;margin:2rem auto 1rem;border-radius:.5rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:flex-start}#adminCatalogBar .btn{background:#fff;color:#0D1B2A}#adminCatalogBar .btn:hover{background:#f1f5f9}.product__adminBar{margin-top:.5rem;display:flex;gap:.5rem}.btn--xs{padding:.25rem .5rem;font-size:.7rem;line-height:1;border-radius:.35rem}.btn--danger{background:#b42318;color:#fff}.btn--danger:hover{background:#932015}.product-edit{display:grid;gap:.5rem;font-size:.8rem}.product-edit input{width:100%;padding:.35rem .5rem;border:1px solid #ccc;border-radius:4px;font-size:.8rem}.edit__actions{display:flex;gap:.5rem;margin-top:.25rem}.admin-add-form{background:#f8fafc;padding:1rem;border:1px solid #dce3ec;border-radius:.75rem;margin:0 auto 1.5rem;display:grid;gap:.75rem;max-width:900px}.admin-add-form label{font-size:.75rem;display:grid;gap:.25rem;font-weight:600}.admin-add-form input{padding:.4rem .6rem;font-size:.85rem;border:1px solid #c2ccd6;border-radius:4px;}.pe-preview{background:#fff;border:1px solid #d0d7e1;padding:.5rem;display:flex;justify-content:center;align-items:center;min-height:120px;border-radius:6px}.pe-preview img{max-width:100%;max-height:180px;object-fit:contain}.pe-preview.invalid{border-color:#c62828;background:#fff5f5}.modal-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:4000;padding:1rem}.modal{background:#fff;max-width:420px;width:100%;border-radius:12px;box-shadow:0 10px 40px -5px rgba(0,0,0,.25);padding:1.25rem;display:grid;gap:1rem;font-size:.95rem}.modal__title{font-size:1.05rem;font-weight:600}.modal__actions{display:flex;justify-content:flex-end;gap:.75rem}.modal button{cursor:pointer}.ck-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:2rem 1rem;z-index:4100}.ck-overlay.open{display:flex}.ck-modal{background:#fff;padding:1.5rem 1.25rem;border-radius:14px;max-width:560px;width:100%;display:grid;gap:1rem;box-shadow:0 10px 40px -8px rgba(0,0,0,.3)}.ck-modal h2{margin:0;font-size:1.15rem}.ck-form{display:grid;gap:.85rem}.ck-form label{display:grid;gap:.3rem;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}.ck-form input,.ck-form textarea{padding:.55rem .65rem;border:1px solid #c5ced8;border-radius:6px;font-size:.85rem;font-family:inherit;resize:vertical}.ck-actions{display:flex;justify-content:flex-end;gap:.75rem;margin-top:.25rem}.btn[disabled]{opacity:.6;cursor:not-allowed}`;
+  const style = document.createElement('style');
+  style.id='adminInlineStyles';
+  style.textContent = css;
+  document.head.appendChild(style);
+})();
+
+// ----- Confirmación custom modal -----
+function customConfirm(message){
+  return new Promise(resolve=>{
+    let overlay = document.getElementById('modalConfirmOverlay');
+    if(overlay) overlay.remove();
+    overlay = document.createElement('div');
+    overlay.id='modalConfirmOverlay';
+    overlay.className='modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal__title">Confirmar acción</div>
+        <div>${message}</div>
+        <div class="modal__actions">
+          <button type="button" class="btn btn--outline" data-act="no">Cancelar</button>
+          <button type="button" class="btn btn--primary" data-act="yes">Sí</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    function done(val){ overlay.remove(); resolve(val); }
+    overlay.addEventListener('click', e=>{ if(e.target===overlay) done(false); });
+    overlay.querySelector('[data-act="no"]').addEventListener('click',()=>done(false));
+    overlay.querySelector('[data-act="yes"]').addEventListener('click',()=>done(true));
+  });
+}
+
+// ----- Inicializador de formularios (preview imagen) -----
+function initEditForm(form){
+  if(!form) return;
+  const imgInput = form.querySelector('input[name="img"]');
+  const previewBox = form.querySelector('.pe-preview');
+  const imgEl = previewBox?.querySelector('img');
+  function setState(valid){
+    if(!previewBox) return;
+    previewBox.classList.toggle('invalid', !valid);
+    if(imgEl) imgEl.dataset.valid = valid? 'yes':'no';
+  }
+  function update(){
+    const url = imgInput.value.trim();
+    if(!url){ if(imgEl){ imgEl.hidden=true; } setState(false); return; }
+    if(imgEl){ imgEl.hidden=false; imgEl.src = url; }
+  }
+  if(imgEl){
+    imgEl.addEventListener('load',()=> setState(true));
+    imgEl.addEventListener('error',()=> setState(false));
+  }
+  imgInput?.addEventListener('input', update);
+  update();
+}
+
+// ----- Checkout overlay con datos del cliente -----
+const oldCheckout = cartCheckout; // ya capturado arriba
+if(oldCheckout){
+  oldCheckout.replaceWith(oldCheckout.cloneNode(true));
+}
+const newCheckoutBtn = document.getElementById('cartCheckout');
+newCheckoutBtn?.addEventListener('click', ()=>{
+  if(getRole && getRole()==='admin'){ showToast('Modo administrador: ventas deshabilitadas'); return; }
+  if(cart.length===0){ showToast('Tu carrito está vacío'); return; }
+  openCheckout();
+});
+
+function ensureCheckout(){
+  if(document.getElementById('checkoutOverlay')) return;
+  const ov = document.createElement('div');
+  ov.id='checkoutOverlay';
+  ov.className='ck-overlay';
+  ov.innerHTML = `
+    <div class="ck-modal" role="dialog" aria-modal="true">
+      <h2>Finalizar compra</h2>
+      <form class="ck-form" id="checkoutForm">
+        <label>Nombre completo<input name="nombre" required></label>
+        <label>Teléfono (WhatsApp)<input name="telefono" required></label>
+        <label>Dirección / Municipio<textarea name="direccion" rows="2" required></textarea></label>
+        <label>Notas adicionales<textarea name="notas" rows="3" placeholder="Talla, color u otra indicación"></textarea></label>
+        <div class="ck-actions">
+          <button type="button" class="btn btn--outline" data-ck="cancel">Cancelar</button>
+          <button type="submit" class="btn btn--primary">Enviar pedido</button>
+        </div>
+      </form>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e=>{ if(e.target===ov) closeCheckout(); });
+  ov.querySelector('[data-ck="cancel"]').addEventListener('click', closeCheckout);
+  ov.querySelector('#checkoutForm').addEventListener('submit', submitCheckout);
+}
+function openCheckout(){ ensureCheckout(); const ov = document.getElementById('checkoutOverlay'); ov.classList.add('open'); }
+function closeCheckout(){ const ov = document.getElementById('checkoutOverlay'); if(ov) ov.classList.remove('open'); }
+function submitCheckout(e){
+  e.preventDefault();
+  if(cart.length===0){ showToast('Carrito vacío'); return; }
+  const fd = new FormData(e.target);
+  const nombre = String(fd.get('nombre')||'').trim();
+  const telefono = String(fd.get('telefono')||'').trim();
+  const direccion = String(fd.get('direccion')||'').trim();
+  const notas = String(fd.get('notas')||'').trim();
+  if(!nombre || !telefono || !direccion){ showToast('Completa los campos'); return; }
+  const lines = cart.map(it => `${it.qty} × ${it.title} (${formatPrice(it.price)} c/u)`);
+  const total = cart.reduce((s, it) => s + it.price * it.qty, 0);
+  const msg = `Pedido de ${nombre}\nTel: ${telefono}\nDirección: ${direccion}\n\nProductos:\n- ${lines.join('\n- ')}\n\nTotal: ${formatPrice(total)}${notas?`\nNotas: ${notas}`:''}`;
+  const link = buildWaLink({ text: msg });
+  window.open(link, '_blank');
+  cart = []; saveCart(); updateCartBadge(); renderCart();
+  closeCheckout();
+  showToast('Pedido enviado');
+}
+
 
