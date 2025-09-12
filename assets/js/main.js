@@ -1,8 +1,8 @@
-console.log('Calzado Oxlaj main.js v20250915');
+console.log('Calzado Oxlaj main.js v20250916');
 // Version badge helper
 (()=>{
   const vEl = document.getElementById('buildVersion');
-  if (vEl) vEl.textContent = 'v20250915';
+  if (vEl) vEl.textContent = 'v20250916';
   else console.warn('[CalzadoOxlaj] buildVersion element no encontrado (HTML antiguo en caché)');
 })();
 // ---- Roles (declarar temprano para evitar ReferenceError) ----
@@ -71,6 +71,10 @@ function renderProducts() {
   const base = Array.isArray(productsOverride) ? productsOverride : PRODUCTS;
   let list = base.filter(hasRealImage);
   const isAdmin = getRole && getRole()==='admin';
+  if(isAdmin && window.__adminSearchTerm){
+    const term = window.__adminSearchTerm.toLowerCase();
+    list = list.filter(p=> String(p.title||'').toLowerCase().includes(term));
+  }
   {
     // Orden original estable por índice + prioridad imágenes locales
     list = list.map((p,i)=>({p,i})).sort((a,b)=>{
@@ -475,12 +479,22 @@ function setupRoleUI(){
       bar.id = 'adminCatalogBar';
       bar.innerHTML = `
         <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;width:100%">
-          <strong style="flex:1 1 auto">Modo administrador</strong>
+          <strong style="flex:0 0 auto">Modo administrador</strong>
+          <input id="adminSearch" type="text" placeholder="Buscar nombre" style="flex:1 1 220px;padding:.5rem .65rem;border:1px solid #ccd5dd;border-radius:6px;font-size:.75rem" />
           <button type="button" class="btn btn--outline" data-admin="add">➕ Añadir</button>
         </div>
         <small style="opacity:.7;display:block;margin-top:.4rem">Edición inline · Cambios locales (no servidor)</small>
       `;
       productsGrid.parentElement?.insertBefore(bar, productsGrid);
+      const search = bar.querySelector('#adminSearch');
+      search.addEventListener('input', e=>{
+        window.__adminSearchTerm = e.target.value.trim();
+        renderProducts();
+      });
+      // Restaurar termino si existe
+      if(window.__adminSearchTerm){
+        search.value = window.__adminSearchTerm;
+      }
     }
   } else {
     if (bar) bar.remove();

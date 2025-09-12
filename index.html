@@ -61,20 +61,12 @@
       <h2 id="roleTitle" class="role-overlay__title">Selecciona tu rol</h2>
       <p style="text-align:center;margin:-.25rem 0 1.25rem;font-size:.85rem;color:#334">Elige cómo quieres usar el sitio. Puedes cambiarlo después.</p>
       <form id="loginForm" class="role-form" autocomplete="off">
-        <div class="role-options" style="display:grid;gap:1rem;margin-bottom:1rem">
-          <label class="role-card" style="display:flex;gap:.75rem;align-items:flex-start;padding:1rem .9rem;border:1.5px solid #d2dae3;border-radius:14px;cursor:pointer;transition:.25s;background:#fff">
-            <input type="radio" name="rol" value="cliente" checked style="margin-top:.35rem" />
-            <span style="display:grid;gap:.25rem">
-              <strong style="font-size:.9rem">Cliente</strong>
-              <small style="font-size:.7rem;line-height:1.2;color:#445">Explora el catálogo, agrega productos y realiza pedidos.</small>
-            </span>
+        <div class="role-options" style="display:grid;gap:.75rem;margin-bottom:1rem">
+          <label class="role-card" style="display:flex;align-items:center;gap:.75rem;padding:.9rem .95rem;border:1.5px solid #d2dae3;border-radius:14px;cursor:pointer;transition:.25s;background:#fff;font-weight:600;font-size:.9rem">
+            <input type="radio" name="rol" value="cliente" checked style="margin:0" /> CLIENTE
           </label>
-          <label class="role-card" style="display:flex;gap:.75rem;align-items:flex-start;padding:1rem .9rem;border:1.5px solid #d2dae3;border-radius:14px;cursor:pointer;transition:.25s;background:#fff">
-            <input type="radio" name="rol" value="admin" style="margin-top:.35rem" />
-            <span style="display:grid;gap:.25rem">
-              <strong style="font-size:.9rem">Administrador</strong>
-              <small style="font-size:.7rem;line-height:1.2;color:#445">Edita, crea y elimina productos (solo este navegador).</small>
-            </span>
+          <label class="role-card" style="display:flex;align-items:center;gap:.75rem;padding:.9rem .95rem;border:1.5px solid #d2dae3;border-radius:14px;cursor:pointer;transition:.25s;background:#fff;font-weight:600;font-size:.9rem">
+            <input type="radio" name="rol" value="admin" style="margin:0" /> ADMINISTRADOR
           </label>
         </div>
         <div style="display:grid;gap:.5rem;margin-bottom:.75rem">
@@ -229,7 +221,7 @@
   <!-- Toasts -->
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="./assets/js/data.js?v=20250915" defer></script>
-  <script src="./assets/js/main.js?v=20250915" defer></script>
+  <script src="./assets/js/data.js?v=20250916" defer></script>
+  <script src="./assets/js/main.js?v=20250916" defer></script>
 </body>
 </html>

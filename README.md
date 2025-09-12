@@ -8,6 +8,7 @@ Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y con
 - Testimonios y sección de información
 - Diseño responsivo y accesible
 - Despliegue en Netlify y GitHub Pages
+ - Búsqueda (solo modo ADMIN) por nombre de producto
 
 ## Roles estáticos y administración inline
 - Al abrir el sitio (`index.html`) aparece un selector de rol (Cliente o Administrador).
@@ -15,6 +16,7 @@ Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y con
 - En modo ADMIN el catálogo se vuelve editable directamente (CRUD inline). Se ocultan funciones de compra y carrito.
    - Acciones: crear, editar y eliminar productos de forma inline.
    - Carga de imagen local mediante drag & drop o botón “Selecciona” (se guarda como Data URL en localStorage).
+   - Campo de búsqueda (solo nombre) para filtrar productos localmente mientras se administra.
    - Los cambios viven solo en este navegador mediante la clave `oxlaj_products_override`.
    - Para reiniciar el catálogo: borrar la clave en localStorage o limpiar datos desde la consola.
 
