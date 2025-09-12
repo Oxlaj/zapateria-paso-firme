@@ -1,4 +1,4 @@
-console.log('Calzado Oxlaj main.js v20250912');
+console.log('Calzado Oxlaj main.js v20250913');
 // Version badge helper
 (()=>{
   const vEl = document.getElementById('buildVersion');
@@ -442,6 +442,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
           const sel = document.querySelector("input[name='rol']:checked");
           dbg.textContent = 'rol seleccionado: ' + (sel? sel.value : 'ninguno');
         }
+        // Toggle clase visual rápida sin depender de :has (compatibilidad y rendimiento)
+        $$('.role-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
     });
   });
   // nada adicional específico al cargar si es admin (CRUD inline se inyecta al renderizar)
@@ -451,12 +454,13 @@ navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 
 loginForm?.addEventListener('submit', (e)=>{
   e.preventDefault();
-  const fd = new FormData(loginForm);
-  let role = (fd.get('rol')) || 'cliente';
+  // Leer directamente el radio seleccionado (evita problemas si FormData falla en algunos navegadores por reflow)
+  const checked = document.querySelector("input[name='rol']:checked");
+  let role = checked ? checked.value : 'cliente';
   if(!ROLE_PASSWORDS[role]) { console.warn('[login] rol desconocido capturado:', role, 'forzando cliente'); role='cliente'; }
   const entered = rolePasswordInput ? rolePasswordInput.value.trim() : '';
   const expected = ROLE_PASSWORDS[role];
-  console.log('[login] intento', { roleSeleccionado: role, enteredLen: entered.length, expectedDefined: !!expected });
+  console.log('[login] intento v2', { roleSeleccionado: role, enteredLen: entered.length, expectedDefined: !!expected, radioDetectado: !!checked });
   if (!entered) { pwError && (pwError.textContent='Ingresa la contraseña'); return; }
   if (entered === 'demo') { console.warn('[login] usando bypass demo'); }
   else if (entered !== expected) { pwError && (pwError.textContent='Contraseña incorrecta'); return; }
