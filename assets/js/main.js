@@ -1,8 +1,8 @@
-console.log('Calzado Oxlaj main.js v20250916');
+console.log('Calzado Oxlaj main.js v20250917');
 // Version badge helper
 (()=>{
   const vEl = document.getElementById('buildVersion');
-  if (vEl) vEl.textContent = 'v20250916';
+  if (vEl) vEl.textContent = 'v20250917';
   else console.warn('[CalzadoOxlaj] buildVersion element no encontrado (HTML antiguo en caché)');
 })();
 // ---- Roles (declarar temprano para evitar ReferenceError) ----
@@ -128,15 +128,17 @@ form?.addEventListener('submit', (e) => {
   const email = $('#email');
   const message = $('#message');
   let ok = true;
-
   if (!name.value.trim()) { showError(name, 'Ingresa tu nombre'); ok = false; } else showError(name, '');
   if (!validateEmail(email.value)) { showError(email, 'Correo inválido'); ok = false; } else showError(email, '');
   if (!message.value.trim()) { showError(message, 'Escribe un mensaje'); ok = false; } else showError(message, '');
-
   if (ok) {
-    const msg = `Hola, soy ${name.value.trim()} (${email.value.trim()}).\nQuiero información:\n${message.value.trim()}`;
-    const link = buildWaLink({ text: msg });
-    window.open(link, '_blank');
+    const role = (getRole&&getRole()) || 'cliente';
+    const subject = encodeURIComponent(`Consulta desde sitio - ${role}`);
+    const body = encodeURIComponent(
+      `Nombre: ${name.value.trim()}\nCorreo de contacto: ${email.value.trim()}\nRol actual: ${role}\n\nMensaje:\n${message.value.trim()}`
+    );
+    const mailto = `mailto:vieryoxlaj8@gmail.com?subject=${subject}&body=${body}`;
+    window.location.href = mailto;
   }
 });
 

@@ -1,10 +1,11 @@
 # Calzado Oxlaj
-Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y contacto por WhatsApp. El backend PHP/MySQL existe (carpeta `api/`) pero está deshabilitado desde el frontend (modo estático).
+Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y contacto directo por correo electrónico (mailto) y botón rápido de WhatsApp. El backend PHP/MySQL existe (carpeta `api/`) pero está deshabilitado desde el frontend (modo estático).
 
 ## Características
 - Catálogo de productos (imágenes locales y de muestra)
 - Marcar productos como favoritos (se guarda en tu dispositivo)
-- Contacto y pedidos por WhatsApp (botón flotante y formulario)
+- Contacto: formulario que abre tu cliente de correo (mailto) a **vieryoxlaj8@gmail.com**
+- Botón flotante de WhatsApp para mensaje rápido
 - Testimonios y sección de información
 - Diseño responsivo y accesible
 - Despliegue en Netlify y GitHub Pages
@@ -34,7 +35,7 @@ Nota: El backend en PHP/MySQL existe en la carpeta `api/`, pero está deshabilit
    (CRUD inline reemplaza al antiguo panel separado eliminado del repositorio.)
 - `assets/css/styles.css`: estilos
 - `assets/js/data.js`: datos de productos y testimonios
-- `assets/js/main.js`: lógica de favoritos, WhatsApp, renderizado (sin backend; USE_SERVER=false)
+- `assets/js/main.js`: lógica de favoritos, renderizado, envío de formulario vía mailto (sin backend; USE_SERVER=false)
 - `assets/img/`: imágenes y logo
 - `docs/`: manuales técnico y de usuario
 - `netlify.toml`: configuración de despliegue
@@ -46,12 +47,13 @@ Nota: El backend en PHP/MySQL existe en la carpeta `api/`, pero está deshabilit
    cd zapateria-paso-firme
    ```
 2. Abre `index.html` en tu navegador, o usa Live Server en VS Code.
-3. Marca favoritos y contacta por WhatsApp.
+3. Marca favoritos y contacta por correo (formulario) o WhatsApp (botón verde).
 
 ## Personalización
 - Para agregar productos iniciales con imágenes propias de forma permanente (semilla), coloca los archivos en `assets/img/catalogo/` y edita `assets/js/data.js`.
 - Para agregar o cambiar imágenes desde el modo ADMIN usa el área de drag & drop (no requiere URL). La imagen queda embebida (Data URL) y persiste solo en tu navegador.
 - Cambia el número de WhatsApp en `main.js` (`WA_NUMBER`).
+- Cambia el correo destino editando la constante usada en el handler del formulario (actualmente hardcodeado a `vieryoxlaj8@gmail.com`).
 
 ## Despliegue
 - Netlify: conecta el repo y publica desde el directorio raíz (`publish = "."`).
@@ -62,4 +64,4 @@ Nota: El backend en PHP/MySQL existe en la carpeta `api/`, pero está deshabilit
 - [Manual de Usuario (RTF)](docs/Manual_de_Usuario_Calzado_Oxlaj.rtf)
 
 ## Soporte
-Si tienes dudas o problemas, usa el botón de WhatsApp para contactarnos.
+Puedes escribir desde el formulario (abre tu cliente de correo) o usar el botón de WhatsApp para contactarnos.
