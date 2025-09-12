@@ -1,8 +1,8 @@
-console.log('Calzado Oxlaj main.js v20250919');
+console.log('Calzado Oxlaj main.js v20250920');
 // Version badge helper
 (()=>{
   const vEl = document.getElementById('buildVersion');
-  if (vEl) vEl.textContent = 'v20250919';
+  if (vEl) vEl.textContent = 'v20250920';
   else console.warn('[CalzadoOxlaj] buildVersion element no encontrado (HTML antiguo en caché)');
 })();
 // ---- Roles (declarar temprano para evitar ReferenceError) ----
