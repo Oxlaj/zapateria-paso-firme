@@ -1,10 +1,16 @@
-console.log('Calzado Oxlaj main.js v20250913');
+console.log('Calzado Oxlaj main.js v20250914');
 // Version badge helper
 (()=>{
   const vEl = document.getElementById('buildVersion');
-  if (vEl) vEl.textContent = 'v20250912';
+  if (vEl) vEl.textContent = 'v20250914';
   else console.warn('[CalzadoOxlaj] buildVersion element no encontrado (HTML antiguo en caché)');
 })();
+// ---- Roles (declarar temprano para evitar ReferenceError) ----
+const ROLE_KEY = 'oxlaj_role'; // 'cliente' | 'admin'
+const ROLE_PASSWORDS = { cliente: 'cliente123', admin: 'admin123' };
+function setRole(role){ try{ localStorage.setItem(ROLE_KEY, role);}catch(e){} }
+function getRole(){ try{ return localStorage.getItem(ROLE_KEY);}catch(e){ return null; } }
+function clearRole(){ try{ localStorage.removeItem(ROLE_KEY);}catch(e){} }
 // Utilidades
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -376,16 +382,6 @@ const rolePasswordInput = document.getElementById('rolePassword');
 const pwError = document.getElementById('pwError');
 const pwToggle = document.getElementById('pwToggle');
 
-// Contraseñas estáticas (pueden cambiarse luego a backend)
-const ROLE_PASSWORDS = {
-  cliente: 'cliente123',
-  admin: 'admin123'
-};
-
-const ROLE_KEY = 'oxlaj_role'; // 'cliente' | 'admin'
-function setRole(role){ localStorage.setItem(ROLE_KEY, role); }
-function getRole(){ return localStorage.getItem(ROLE_KEY); }
-function clearRole(){ localStorage.removeItem(ROLE_KEY); }
 
 function showSite(show){
   [pageHeader,pageMain,pageFooter].forEach(el=>{ if(!el) return; el.style.display = show ? '' : ''; }); // siempre visibles ahora
@@ -454,6 +450,8 @@ navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 
 loginForm?.addEventListener('submit', (e)=>{
   e.preventDefault();
+
+  //ACA ESTA EL HANDLER DEL LOGIN
   // Leer directamente el radio seleccionado (evita problemas si FormData falla en algunos navegadores por reflow)
   const checked = document.querySelector("input[name='rol']:checked");
   let role = checked ? checked.value : 'cliente';
