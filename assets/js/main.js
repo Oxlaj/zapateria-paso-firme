@@ -447,9 +447,11 @@ navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 loginForm?.addEventListener('submit', (e)=>{
   e.preventDefault();
   const fd = new FormData(loginForm);
-  const role = (fd.get('rol')) || 'cliente';
+  let role = (fd.get('rol')) || 'cliente';
+  if(!ROLE_PASSWORDS[role]) { console.warn('[login] rol desconocido capturado:', role, 'forzando cliente'); role='cliente'; }
   const entered = rolePasswordInput ? rolePasswordInput.value.trim() : '';
   const expected = ROLE_PASSWORDS[role];
+  console.log('[login] intento', { roleSeleccionado: role, enteredLen: entered.length, expectedDefined: !!expected });
   if (!entered) { pwError && (pwError.textContent='Ingresa la contraseña'); return; }
   if (entered !== expected) { pwError && (pwError.textContent='Contraseña incorrecta'); return; }
   pwError && (pwError.textContent='');
