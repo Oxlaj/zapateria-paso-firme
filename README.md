@@ -13,8 +13,8 @@ Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y con
 - Al abrir el sitio (`index.html`) aparece un selector de rol (Cliente o Administrador).
 - La elección se guarda en localStorage y se puede cambiar con “Cerrar sesión”.
 - En modo ADMIN el catálogo se vuelve editable directamente (CRUD inline). Se ocultan funciones de compra y carrito.
-   - Acciones: crear, editar, eliminar productos; vista previa de imagen y validación.
-   - Búsqueda y orden (cuando se active la nueva barra) permiten filtrar continuamente.
+   - Acciones: crear, editar y eliminar productos de forma inline.
+   - Carga de imagen local mediante drag & drop o botón “Selecciona” (se guarda como Data URL en localStorage).
    - Los cambios viven solo en este navegador mediante la clave `oxlaj_products_override`.
    - Para reiniciar el catálogo: borrar la clave en localStorage o limpiar datos desde la consola.
 
@@ -47,7 +47,8 @@ Nota: El backend en PHP/MySQL existe en la carpeta `api/`, pero está deshabilit
 3. Marca favoritos y contacta por WhatsApp.
 
 ## Personalización
-- Para agregar productos con imágenes propias, coloca los archivos en `assets/img/catalogo/` y edita `assets/js/data.js`.
+- Para agregar productos iniciales con imágenes propias de forma permanente (semilla), coloca los archivos en `assets/img/catalogo/` y edita `assets/js/data.js`.
+- Para agregar o cambiar imágenes desde el modo ADMIN usa el área de drag & drop (no requiere URL). La imagen queda embebida (Data URL) y persiste solo en tu navegador.
 - Cambia el número de WhatsApp en `main.js` (`WA_NUMBER`).
 
 ## Despliegue
