@@ -54,6 +54,10 @@ Nota: El backend en PHP/MySQL existe en la carpeta `api/`, pero está deshabilit
 - Para agregar o cambiar imágenes desde el modo ADMIN usa el área de drag & drop (no requiere URL). La imagen queda embebida (Data URL) y persiste solo en tu navegador.
 - Cambia el número de WhatsApp en `main.js` (`WA_NUMBER`).
 - Cambia el correo destino editando la constante usada en el handler del formulario (actualmente hardcodeado a `vieryoxlaj8@gmail.com`).
+ - Imagen principal (hero): ahora usa `<picture>` con soporte opcional para `portada.avif` y `portada.webp`. Si solo tienes `portada.jpg`, el sitio funciona igual (los `<source>` fallan en silencio). Para generar versiones optimizadas puedes usar:
+    - Squoosh (web) o `cwebp`: `cwebp -q 82 portada.jpg -o portada.webp`
+    - `avifenc`: `avifenc --min 30 --max 35 portada.jpg portada.avif`
+    Coloca los archivos en `assets/img/` junto al original.
 
 ## Despliegue
 - Netlify: conecta el repo y publica desde el directorio raíz (`publish = "."`).
