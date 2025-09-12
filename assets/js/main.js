@@ -1,8 +1,8 @@
-console.log('Calzado Oxlaj main.js v20250920');
+console.log('Calzado Oxlaj main.js v20250921');
 // Version badge helper
 (()=>{
   const vEl = document.getElementById('buildVersion');
-  if (vEl) vEl.textContent = 'v20250920';
+  if (vEl) vEl.textContent = 'v20250921';
   else console.warn('[CalzadoOxlaj] buildVersion element no encontrado (HTML antiguo en caché)');
 })();
 // ---- Roles (declarar temprano para evitar ReferenceError) ----
@@ -135,10 +135,20 @@ form?.addEventListener('submit', (e) => {
     const role = (getRole&&getRole()) || 'cliente';
     const subject = encodeURIComponent(`Consulta desde sitio - ${role}`);
     const body = encodeURIComponent(
-      `Nombre: ${name.value.trim()}\nCorreo de contacto: ${email.value.trim()}\nRol actual: ${role}\n\nMensaje:\n${message.value.trim()}`
+`Nombre: ${name.value.trim()}\nCorreo de contacto: ${email.value.trim()}\nRol actual: ${role}\n\nMensaje:\n${message.value.trim()}`
     );
-    const mailto = `mailto:vieryoxlaj8@gmail.com?subject=${subject}&body=${body}`;
-    window.location.href = mailto;
+    // Intentar abrir Gmail compose si el usuario está logueado en Gmail, fallback a mailto
+  // Requerimiento: enviar (preparar) correo a la dirección proporcionada en el formulario.
+  // Usamos el correo ingresado como destinatario principal y agregamos el correo del sitio en BCC para registro.
+  const userTo = encodeURIComponent(email.value.trim());
+  const siteMail = 'vieryoxlaj8@gmail.com';
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${userTo}&bcc=${encodeURIComponent(siteMail)}&su=${subject}&body=${body}`;
+    const win = window.open(gmailUrl, '_blank');
+    // Si el navegador bloquea el popup, usar mailto como respaldo
+    if(!win){
+      const mailto = `mailto:${userTo}?bcc=${encodeURIComponent(siteMail)}&subject=${subject}&body=${body}`;
+      window.location.href = mailto;
+    }
   }
 });
 
@@ -212,17 +222,16 @@ cartBtn?.addEventListener('click', openDrawer);
 cartClose?.addEventListener('click', closeDrawer);
 drawerOverlay?.addEventListener('click', closeDrawer);
 
-async function addToCart(prod) {
+function addToCart(prod) {
   const idx = cart.findIndex(i => i.id === prod.id);
   if (idx >= 0) cart[idx].qty += 1; else cart.push({ id: prod.id, title: prod.title, price: prod.price, img: prod.img, qty: 1 });
   saveCart(); updateCartBadge(); renderCart(); showToast('Producto agregado al carrito');
-  serverAdd(prod.id); // no await para no bloquear UI
 }
-async function removeFromCart(id) {
-  cart = cart.filter(i => i.id !== id); saveCart(); updateCartBadge(); renderCart(); serverRemove(id);
+function removeFromCart(id) {
+  cart = cart.filter(i => i.id !== id); saveCart(); updateCartBadge(); renderCart();
 }
-async function setQty(id, qty) {
-  const it = cart.find(i => i.id === id); if (!it) return; it.qty = Math.max(1, qty); saveCart(); updateCartBadge(); renderCart(); serverUpdate(id, it.qty);
+function setQty(id, qty) {
+  const it = cart.find(i => i.id === id); if (!it) return; it.qty = Math.max(1, qty); saveCart(); updateCartBadge(); renderCart();
 }
 function renderCart() {
   if (!cartList || !cartEmpty || !cartTotalEl) return;
@@ -314,38 +323,14 @@ productsGrid?.addEventListener('click', (e) => {
     toggleFav(id);
   }
 });
-
-const USE_SERVER = false; // Deshabilita backend/BD por ahora
-const API_BASE = 'api'; // base relativa para XAMPP/Apache local (funciona en subcarpetas)
-async function api(path, options={}) {
-  if (!USE_SERVER) return null;
-  try {
-    const res = await fetch(`${API_BASE}${path}`, { headers: { 'Content-Type':'application/json' }, ...options });
-    return await res.json();
-  } catch(e) { console.warn('API error', e); return null; }
-}
-async function syncCartFromServer() {
-  if (!USE_SERVER) return;
-  const data = await api('/cart.php');
-  if (data && Array.isArray(data.cart)) {
-    cart = data.cart.map(it => ({ id: it.id, title: it.title, price: Number(it.price), img: it.img, qty: it.qty }));
-    saveCart();
-    updateCartBadge();
-    renderCart();
-  }
-}
-async function serverAdd(id) { if (!USE_SERVER) return; await api('/cart.php', { method:'POST', body: JSON.stringify({ id }) }); }
-async function serverUpdate(id, qty) { if (!USE_SERVER) return; await api('/cart.php', { method:'PUT', body: JSON.stringify({ id, qty }) }); }
-async function serverRemove(id) { if (!USE_SERVER) return; await api(`/cart.php?id=${id}`, { method:'DELETE' }); }
-
-// Inicialización extendida
+// Inicialización
 loadState();
 // cargar override de productos desde localStorage
 const PROD_KEY = 'oxlaj_products_override';
 try { productsOverride = JSON.parse(localStorage.getItem(PROD_KEY) || 'null'); } catch { productsOverride = null; }
 renderProducts();
 renderTestimonials();
-syncCartFromServer().then(()=>renderCart());
+renderCart();
 
 // Escuchar cambios de productos en otras pestañas (sin backend) y refrescar
 window.addEventListener('storage', (e)=>{
@@ -444,7 +429,7 @@ loginForm?.addEventListener('submit', (e)=>{
   if(!ROLE_PASSWORDS[role]) { console.warn('[login] rol desconocido capturado:', role, 'forzando cliente'); role='cliente'; }
   const entered = rolePasswordInput ? rolePasswordInput.value.trim() : '';
   const expected = ROLE_PASSWORDS[role];
-  console.log('[login] intento v2', { roleSeleccionado: role, enteredLen: entered.length, expectedDefined: !!expected, radioDetectado: !!checked });
+  // (debug log removido)
   if (!entered) { pwError && (pwError.textContent='Ingresa la contraseña'); return; }
   if (entered === 'demo') { console.warn('[login] usando bypass demo'); }
   else if (entered !== expected) { pwError && (pwError.textContent='Contraseña incorrecta'); return; }
