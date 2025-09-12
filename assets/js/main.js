@@ -483,7 +483,6 @@ function setupRoleUI(){
           <input id="adminSearch" type="text" placeholder="Buscar nombre" style="flex:1 1 220px;padding:.5rem .65rem;border:1px solid #ccd5dd;border-radius:6px;font-size:.75rem" />
           <button type="button" class="btn btn--outline" data-admin="add">➕ Añadir</button>
         </div>
-        <small style="opacity:.7;display:block;margin-top:.4rem">Edición inline · Cambios locales (no servidor)</small>
       `;
       productsGrid.parentElement?.insertBefore(bar, productsGrid);
       const search = bar.querySelector('#adminSearch');
