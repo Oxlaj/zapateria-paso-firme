@@ -11,18 +11,33 @@ if ($method === 'GET') {
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
 if ($method === 'POST') {
-  // Modo simplificado: solo contraseña. Determina rol según coincidencia con usuarios existentes.
+  // Nuevo modo: acepta rol + password fija (cliente123 / admin123) o sigue permitiendo password hash si solo se envía password.
+  $role = isset($input['role']) ? strtolower((string)$input['role']) : null;
   $pass = (string)($input['password'] ?? '');
   if ($pass === '') json_response(['error'=>'Contraseña requerida'], 400);
-  // Estrategia: buscar todos los usuarios y verificar primer hash que calce.
-  $stmt = $pdo->query('SELECT id,nombre,correo,password_hash,rol FROM usuarios ORDER BY id');
-  $found = null;
-  while($row = $stmt->fetch(PDO::FETCH_ASSOC)){
-    if(password_verify($pass, $row['password_hash'])){ $found = $row; break; }
+
+  $fixed = [ 'cliente'=>'cliente123', 'admin'=>'admin123' ];
+
+  if ($role && isset($fixed[$role])) {
+    if ($pass !== $fixed[$role]) json_response(['error'=>'Credenciales inválidas'],401);
+    // Intentar obtener usuario real del rol
+    $stmt = $pdo->prepare('SELECT id,nombre,correo,rol FROM usuarios WHERE rol=? ORDER BY id LIMIT 1');
+    $stmt->execute([$role]);
+    $u = $stmt->fetch(PDO::FETCH_ASSOC);
+    if(!$u){
+      // Usuario ficticio en sesión (sin persistir nada sensible)
+      $u = [ 'id'=> ($role==='admin'?1:0), 'nombre'=> ucfirst($role).' Local', 'correo'=> $role.'@local', 'rol'=>$role ];
+    }
+    $_SESSION['user'] = $u;
+    json_response(['ok'=>true,'user'=>$_SESSION['user'],'mode'=>'fixed-role']);
   }
-  if(!$found){ json_response(['error'=>'Contraseña inválida'],401); }
-  $_SESSION['user'] = ['id'=>$found['id'],'nombre'=>$found['nombre'],'correo'=>$found['correo'],'rol'=>$found['rol']];
-  json_response(['ok'=>true,'user'=>$_SESSION['user']]);
+
+  // Compatibilidad: si no se envía role, seguir modo password-hash (recorre usuarios)
+  $stmt = $pdo->query('SELECT id,nombre,correo,password_hash,rol FROM usuarios ORDER BY id');
+  while($row = $stmt->fetch(PDO::FETCH_ASSOC)){
+    if(password_verify($pass, $row['password_hash'])){ $_SESSION['user'] = ['id'=>$row['id'],'nombre'=>$row['nombre'],'correo'=>$row['correo'],'rol'=>$row['rol']]; json_response(['ok'=>true,'user'=>$_SESSION['user'],'mode'=>'hash']); }
+  }
+  json_response(['error'=>'Contraseña inválida'],401);
 }
 
 if ($method === 'DELETE') { // logout

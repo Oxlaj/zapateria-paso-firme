@@ -21,8 +21,9 @@ async function fetchSession(){
     return __currentUser;
   } catch(e){ return null; }
 }
-async function loginServerPassword(pass){
-  const d = await serverJSON('api/auth.php',{method:'POST', body:{ password: pass }});
+async function loginServerPassword(pass, role){
+  const body = role ? { password: pass, role } : { password: pass };
+  const d = await serverJSON('api/auth.php',{method:'POST', body});
   __currentUser = d.user || null;
   if(__currentUser){ setRole(__currentUser.rol || 'cliente'); }
   return __currentUser;
@@ -49,35 +50,7 @@ if(location.protocol==='file:'){
   console.info('[CalzadoOxlaj] Modo servidor activado (FORCE_SERVER)');
 }
 
-// ----- Badge estado servidor -----
-const serverBadge = document.getElementById('serverStatusBadge');
-async function refreshServerStatus(){
-  if(!serverBadge) return;
-  if(!serverActive()){
-    serverBadge.textContent = 'SVR: OFF';
-    serverBadge.style.background = '#b42318';
-    serverBadge.title = 'Servidor inactivo (offline)';
-    return;
-  }
-  try {
-    const d = await fetch('api/health.php', { credentials:'include'}).then(r=>r.json());
-    if(d.ok){
-      serverBadge.textContent = 'SVR: ON';
-      serverBadge.style.background = '#0d9488';
-      serverBadge.title = 'Conectado · productos: '+d.productos + (d.user? ' · rol: '+d.user.rol : '');
-    } else {
-      serverBadge.textContent = 'SVR: ERR';
-      serverBadge.style.background = '#b45309';
-      serverBadge.title = 'Error: '+(d.error||'desconocido');
-    }
-  } catch(e){
-    serverBadge.textContent = 'SVR: FAIL';
-    serverBadge.style.background = '#b42318';
-    serverBadge.title = 'Fallo al contactar health.php';
-  }
-}
-setInterval(refreshServerStatus, 7000);
-document.addEventListener('DOMContentLoaded', refreshServerStatus);
+// (El badge de estado de servidor ha sido eliminado a petición del usuario)
 
 // --- Helpers de red (modo servidor) ---
 async function serverJSON(url, options={}){
@@ -604,7 +577,9 @@ loginForm?.addEventListener('submit', async (e)=>{
 
   if(serverActive()){
     try {
-      await loginServerPassword(enteredPw);
+      const checked = document.querySelector("input[name='rol']:checked");
+      const selRole = checked ? checked.value : null;
+      await loginServerPassword(enteredPw, selRole);
       const r = getRole() || 'cliente';
       afterLogin(r);
       rolePasswordInput && (rolePasswordInput.value='');
