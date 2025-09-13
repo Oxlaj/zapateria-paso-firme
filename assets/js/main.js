@@ -21,7 +21,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 // Backend toggle (modo normalizado). Cambia a true para consumir API PHP.
-const USE_SERVER = false; // Modo offline: login por roles locales
+const USE_SERVER = true; // Modo servidor activo: login real (correo + password)
 
 // --- Helpers de red (modo servidor) ---
 async function serverJSON(url, options={}){
@@ -458,6 +458,7 @@ const pageFooter = document.querySelector('footer');
 const loginForm = document.getElementById('loginForm');
 const logoutBtn = document.getElementById('logoutBtn');
 const rolePasswordInput = document.getElementById('rolePassword');
+const loginEmailInput = document.getElementById('loginEmail');
 const pwError = document.getElementById('pwError');
 const pwToggle = document.getElementById('pwToggle');
 
@@ -527,16 +528,34 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 
-loginForm?.addEventListener('submit', (e)=>{
+loginForm?.addEventListener('submit', async (e)=>{
   e.preventDefault();
+  pwError && (pwError.textContent='');
+  const enteredPw = rolePasswordInput ? rolePasswordInput.value.trim() : '';
+  if (!enteredPw){ pwError && (pwError.textContent='Ingresa la contraseña'); return; }
+
+  if (USE_SERVER){
+    // Modo servidor: requiere correo + password contra tabla usuarios
+    const correo = loginEmailInput ? loginEmailInput.value.trim() : '';
+    if(!correo){ pwError && (pwError.textContent='Ingresa el correo'); return; }
+    try {
+      await loginServer(correo, enteredPw);
+      const rol = getRole() || (__currentUser && __currentUser.rol) || 'cliente';
+      afterLogin(rol);
+      if (rolePasswordInput) rolePasswordInput.value='';
+      if (loginEmailInput) loginEmailInput.value='';
+    } catch(err){
+      pwError && (pwError.textContent = err.message || 'Error iniciando sesión');
+    }
+    return;
+  }
+
+  // Modo offline local
   const checked = document.querySelector("input[name='rol']:checked");
   let role = checked ? checked.value : 'cliente';
   if(!ROLE_PASSWORDS[role]) role='cliente';
-  const entered = rolePasswordInput ? rolePasswordInput.value.trim() : '';
   const expected = ROLE_PASSWORDS[role];
-  if (!entered) { pwError && (pwError.textContent='Ingresa la contraseña'); return; }
-  if (entered !== expected) { pwError && (pwError.textContent='Contraseña incorrecta'); return; }
-  pwError && (pwError.textContent='');
+  if (enteredPw !== expected) { pwError && (pwError.textContent='Contraseña incorrecta'); return; }
   setRole(role); afterLogin(role);
   if (rolePasswordInput) rolePasswordInput.value='';
 });
@@ -548,6 +567,20 @@ pwToggle?.addEventListener('click', ()=>{
   const t = rolePasswordInput.getAttribute('type')==='password' ? 'text' : 'password';
   rolePasswordInput.setAttribute('type', t);
   pwToggle.textContent = t==='password' ? '👁' : '🙈';
+});
+
+// Ajustes UI dinámicos según modo servidor/offline
+document.addEventListener('DOMContentLoaded', ()=>{
+  if (USE_SERVER){
+    // Ocultar tarjetas de rol (el rol proviene del servidor) pero dejamos fallback si falla login.
+    const roleCards = document.querySelectorAll('.role-card');
+    roleCards.forEach(rc => rc.style.display='none');
+    const roleDebug = document.getElementById('roleDebug');
+    if(roleDebug) roleDebug.textContent = 'Modo servidor: ingresa correo y contraseña';
+    if(loginEmailInput){ loginEmailInput.closest('label')?.removeAttribute('hidden'); }
+  } else {
+    if(loginEmailInput){ loginEmailInput.closest('label')?.setAttribute('hidden',''); }
+  }
 });
 
 // (no existe enlace directo a un panel separado: CRUD es inline)

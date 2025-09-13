@@ -1,24 +1,34 @@
 # Calzado Oxlaj
-Sitio web para la zapatería Calzado Oxlaj con catálogo, carrito, favoritos, testimonios y contacto (Gmail Compose / mailto) más botón directo de WhatsApp. Actualmente el sitio está en **modo offline** (`USE_SERVER = false`) usando solo datos locales y roles con contraseña simple.
+Sitio web para la zapatería Calzado Oxlaj con catálogo, carrito, favoritos, testimonios y contacto (Gmail Compose / mailto) más botón directo de WhatsApp. Actualmente el sitio está en **modo servidor** (`USE_SERVER = true`) y persiste productos, favoritos y carrito (según endpoints) en la base de datos.
 
-## Características (modo offline actual)
-- Catálogo base definido en `assets/js/data.js`
-- CRUD inline (solo ADMIN) persistente en tu navegador (localStorage)
-- Carrito y favoritos en localStorage
-- Búsqueda por nombre (modo ADMIN)
+## Características (modo servidor activo)
+- Catálogo desde BD MySQL (endpoint `api/products.php`)
+- CRUD inline (ADMIN) guardando en tablas `productos`, `tags`, `producto_tags`
+- Favoritos vinculados a usuario autenticado (`api/favoritos.php`)
+- Carrito mediante endpoint (`api/cart.php`) - actualmente global (no multiusuario)
+- Testimonios desde BD (`api/testimonios.php`)
 - Contacto: abre Gmail Compose (o mailto) con copia BCC
 - Botón rápido de WhatsApp
 - Diseño responsivo
-- Posibilidad de activar modo servidor más adelante (`USE_SERVER=true`)
+- Fallback local posible cambiando `USE_SERVER=false`
 
 ## Autenticación y roles
-Modo actual: solo selector local (Cliente / Administrador) con contraseñas simples.
-Si se activa el modo servidor (`USE_SERVER=true`) volverán los endpoints y autenticación real.
+Modo actual: autenticación real usando `api/auth.php` (correo + contraseña que se verifica contra `usuarios.password_hash`).
+El formulario muestra campo de correo automáticamente al estar `USE_SERVER=true`.
+Si cambias a modo offline (`USE_SERVER=false`), vuelve a contraseñas simples locales.
 
-### Contraseñas
+### Usuario administrador (BD)
+Inserta un admin si aún no existe (ejemplo):
+```sql
+INSERT INTO usuarios (nombre, correo, password_hash, rol)
+VALUES ('Admin','admin@demo.test', '$2y$10$DEMO_REEMPLAZAR_HASH', 'admin');
+```
+Genera el hash en consola PHP: `php -r "echo password_hash('admin123', PASSWORD_BCRYPT), PHP_EOL;"`
+
+### Fallback contraseñas locales (solo offline)
 - Cliente: `cliente123`
 - Administrador: `admin123`
-Editar en `ROLE_PASSWORDS` dentro de `assets/js/main.js`.
+Se editan en `ROLE_PASSWORDS` (`main.js`).
 
 ### Backend (opcional desactivado)
 Existe un backend normalizado en `api/` (productos, tags, usuarios, favoritos, carrito, testimonios). No se está usando porque `USE_SERVER=false`.
@@ -33,20 +43,34 @@ Existe un backend normalizado en `api/` (productos, tags, usuarios, favoritos, c
 - `docs/`: manuales técnico y de usuario
 - `netlify.toml`: configuración de despliegue
 
-## Puesta en marcha (modo offline actual)
+## Puesta en marcha (modo servidor)
 1. Clonar repositorio:
    ```bash
    git clone https://github.com/Oxlaj/zapateria-paso-firme.git
    cd zapateria-paso-firme
    ```
-2. Abrir `index.html` directamente en el navegador o usar un servidor simple (Live Server / php -S). No requiere BD.
-3. Elegir rol, ingresar la contraseña local y administrar.
+2. Crear BD y tablas:
+   ```bash
+   mysql -u root -p < api/schema.sql
+   ```
+3. Crear `api/config.local.php` (si tus credenciales difieren):
+   ```php
+   <?php
+   $DB_HOST='127.0.0.1';
+   $DB_USER='root';
+   $DB_PASS='admin'; // ajusta
+   $DB_NAME='calzado_oxlaj';
+   ```
+4. Insertar usuario admin (ver sección anterior).
+5. Servir con PHP embebido (para sesiones):
+   ```bash
+   php -S 127.0.0.1:8080
+   ```
+6. Abrir http://127.0.0.1:8080/ y hacer login con correo + password.
+7. CRUD admin ahora persiste en la base de datos.
 
-### Activar modo servidor (opcional)
-1. Configurar BD con `api/schema.sql`.
-2. Crear `api/config.local.php` con credenciales.
-3. Cambiar en `assets/js/main.js` a `const USE_SERVER = true;`.
-4. Recargar: ahora CRUD y datos irán contra la BD.
+### Modo offline (fallback)
+Si deseas volver: cambia `USE_SERVER = false` en `main.js`. Se ocultará el campo correo y volverán las contraseñas locales.
 
 ## Endpoints principales
 | Recurso | Método(s) | Endpoint | Descripción |
@@ -69,8 +93,8 @@ Existe un backend normalizado en `api/` (productos, tags, usuarios, favoritos, c
     Coloca los archivos en `assets/img/` junto al original.
 
 ## Despliegue
-- Estático (Netlify / GitHub Pages): fijar `USE_SERVER=false`.
-- Dinámico (Hostinger / cPanel / VPS): subir todo, configurar `config.local.php` o variables de entorno y listo (ya `USE_SERVER=true`).
+- Estático (Netlify / GitHub Pages): usar `USE_SERVER=false`.
+- Dinámico (Hostinger / cPanel / VPS): subir todo, configurar `config.local.php` o variables de entorno, `USE_SERVER=true` y asegurar soporte PHP >= 8 + MySQL.
 
 ## Manuales
 - [Manual Técnico (RTF)](docs/Manual_Tecnico_Calzado_Oxlaj.rtf)
