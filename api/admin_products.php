@@ -6,16 +6,60 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 require_role('admin');
 
+/**
+ * Garantiza que la columna productos.imagen tenga capacidad suficiente (MEDIUMTEXT)
+ * para almacenar Base64 (normalmente >600 chars). Intenta alterar solo una vez.
+ */
 function ensure_imagen_column_large($pdo, $data){
-    // Si la imagen (Base64) excede 600 chars y la columna es VARCHAR(600), ampliar a MEDIUMTEXT.
-    if(strlen($data) <= 600) return; // no hace falta
-    static $checked = false; if($checked) return; $checked = true;
+    static $done = false; if($done) return; // Ejecutar una vez por request
+    if(strlen($data) <= 600 && strpos($data,'data:image')===false) return; // Parece ruta corta, no forzamos
     try {
         $col = $pdo->query("SHOW COLUMNS FROM productos LIKE 'imagen'")->fetch(PDO::FETCH_ASSOC);
-        if($col && stripos($col['Type']??'','varchar(600)')!==false){
+        if($col && stripos($col['Type']??'', 'varchar(')!==false){
             $pdo->exec('ALTER TABLE productos MODIFY imagen MEDIUMTEXT NULL');
         }
-    } catch(Exception $e){ /* Silencioso: si falla se verá luego al insertar */ }
+        $done = true;
+    } catch(Exception $e){ /* Silencioso: reintento se hará si ocurre 22001 */ }
+}
+
+/**
+ * Garantiza que la columna id de productos sea AUTO_INCREMENT.
+ */
+function ensure_product_id_autoincrement($pdo){
+    static $checked=false; if($checked) return; $checked=true;
+    try {
+        $col = $pdo->query("SHOW COLUMNS FROM productos LIKE 'id'")->fetch(PDO::FETCH_ASSOC);
+        if($col && stripos($col['Extra']??'', 'auto_increment')===false){
+            $pdo->exec('ALTER TABLE productos MODIFY id INT AUTO_INCREMENT PRIMARY KEY');
+        }
+    } catch(Exception $e){ /* silencioso */ }
+}
+
+/**
+ * Ejecuta un INSERT/UPDATE con retry en caso de error 22001 (Data too long for column 'imagen').
+ * $exec es un closure que recibe PDO y debe ejecutar la sentencia.
+ */
+function with_imagen_retry($pdo, $exec, $imagen){
+    try {
+        return $exec($pdo);
+    } catch(PDOException $e){
+        $msg = $e->getMessage();
+        if(stripos($msg, "Data too long for column 'imagen'") !== false || $e->getCode()==='22001'){
+            try { $pdo->exec('ALTER TABLE productos MODIFY imagen MEDIUMTEXT NULL'); } catch(Exception $e2){ /* ignorar */ }
+            // Reintentar una vez
+            try {
+                return $exec($pdo);
+            } catch(PDOException $e3){
+                json_response([
+                    'error'=>'Columna imagen demasiado pequeña (falló ampliación automática).',
+                    'detalle'=>$e3->getMessage(),
+                    'solucion'=>'Ejecute manualmente: ALTER TABLE productos MODIFY imagen MEDIUMTEXT NULL;'
+                ],500);
+            }
+        }
+        // Otro tipo de error
+        throw $e;
+    }
 }
 
 if ($method === 'GET') {
@@ -46,10 +90,14 @@ if ($method === 'POST') {
         if ($titulo==='') json_response(['error'=>'Título requerido'],400);
         if ($precio < 0) json_response(['error'=>'Precio inválido'],400);
         if ($imagen==='') json_response(['error'=>'Imagen requerida'],400);
+        // Asegurar migraciones automáticas necesarias
         ensure_imagen_column_large($pdo, $imagen);
+        ensure_product_id_autoincrement($pdo);
         if (strlen($imagen) > 2000000) json_response(['error'=>'Imagen demasiado grande (>2MB codificado)'],400);
         $stmt = $pdo->prepare('INSERT INTO productos (titulo,precio,imagen) VALUES (?,?,?)');
-        $stmt->execute([$titulo,$precio,$imagen]);
+        with_imagen_retry($pdo, function($pdo) use ($stmt,$titulo,$precio,$imagen){
+            $stmt->execute([$titulo,$precio,$imagen]);
+        }, $imagen);
         $id = (int)$pdo->lastInsertId();
         if (!is_array($tags)) { $tags = []; }
         sync_product_tags($id, $tags);
@@ -71,7 +119,9 @@ if ($method === 'PUT') {
         ensure_imagen_column_large($pdo, $imagen);
         if (strlen($imagen) > 2000000) json_response(['error'=>'Imagen demasiado grande (>2MB codificado)'],400);
         $stmt = $pdo->prepare('UPDATE productos SET titulo=?, precio=?, imagen=? WHERE id=?');
-        $stmt->execute([$titulo,$precio,$imagen,$id]);
+        with_imagen_retry($pdo, function($pdo) use ($stmt,$titulo,$precio,$imagen,$id){
+            $stmt->execute([$titulo,$precio,$imagen,$id]);
+        }, $imagen);
         if (!is_array($tags)) { $tags = []; }
         sync_product_tags($id, $tags);
         json_response(['ok'=>true]);
