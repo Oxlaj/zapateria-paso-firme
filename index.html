@@ -33,6 +33,7 @@
   <li><a href="#contacto" class="nav__link cta">Contacto</a></li>
       </ul>
       <div class="nav__actions">
+        <span id="serverStatusBadge" style="display:inline-flex;align-items:center;gap:4px;background:#475569;color:#fff;font-size:.55rem;letter-spacing:.5px;padding:4px 6px;border-radius:6px;font-weight:600" title="Estado de conexión al backend">SVR: ?</span>
         <button id="navLogin" class="btn btn--outline" style="margin-right:.5rem" aria-label="Seleccionar rol">Ingresar</button>
         <button id="cartBtn" class="nav__cart" aria-label="Abrir carrito" title="Carrito">🛒 <span id="cartCount" class="badge">0</span></button>
         <button id="logoutBtn" class="btn btn--outline" style="display:none;margin-left:.5rem" aria-label="Cerrar sesión">Salir</button>
@@ -78,11 +79,7 @@
           </label>
         </div>
         <div style="display:grid;gap:.5rem;margin-bottom:.75rem">
-          <label style="font-size:.7rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#334" hidden>
-            Correo (modo servidor)
-            <input id="loginEmail" type="email" autocomplete="username" placeholder="correo@ejemplo.com" style="margin-top:.35rem;padding:.55rem .7rem;border:1.5px solid #c7d1dc;border-radius:8px;font-size:.8rem;width:100%" />
-          </label>
-          <label style="font-size:.7rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#334">Contraseña de rol
+          <label style="font-size:.7rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#334">Contraseña
             <div style="display:flex;align-items:center;gap:.5rem;margin-top:.35rem">
               <input id="rolePassword" type="password" required placeholder="Ingresa la contraseña" style="flex:1;padding:.55rem .7rem;border:1.5px solid #c7d1dc;border-radius:8px;font-size:.8rem"/>
               <button type="button" id="pwToggle" class="btn btn--outline" style="font-size:.75rem;padding:.55rem .75rem" aria-label="Mostrar/ocultar contraseña">👁</button>
@@ -95,7 +92,7 @@
           <button type="submit" class="btn btn--primary" style="flex:1 1 140px">Entrar</button>
           <button type="button" class="btn btn--outline" id="cancelLogin" style="flex:1 1 120px" onclick="document.getElementById('roleOverlay').hidden=true;document.getElementById('roleOverlay').style.display='none';">Cancelar</button>
         </div>
-        <p style="margin:.85rem 0 0;font-size:.65rem;opacity:.65;text-align:center">Roles demo: cliente123 / admin123</p>
+  <p style="margin:.85rem 0 0;font-size:.65rem;opacity:.65;text-align:center">Contraseñas demo: cliente123 / admin123</p>
       </form>
     </div>
   </div>
@@ -235,5 +232,20 @@
 
   <script src="./assets/js/data.js?v=20250921" defer></script>
   <script src="./assets/js/main.js?v=20250921" defer></script>
+  <script>
+    // Banner para avisar cuando el modo servidor está deshabilitado (file:// o FORCE_SERVER=false)
+    (function(){
+      try{
+        var proto = location.protocol;
+        var forceServer = true; // debe coincidir con main.js
+        if((proto!=='http:' && proto!=='https:') || !forceServer){
+          var b = document.createElement('div');
+          b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#b42318;color:#fff;font:600 12px/1.3 Poppins,system-ui;padding:6px 10px;z-index:5000;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;box-shadow:0 -2px 8px rgba(0,0,0,.25)';
+          b.innerHTML = 'Estás viendo el sitio en modo OFFLINE (file://). Para que carrito y favoritos se guarden en MySQL, abre con <code>php -S 127.0.0.1:8080</code> y entra a <a href="http://127.0.0.1:8080/" style="color:#fff;text-decoration:underline">http://127.0.0.1:8080/</a>.';
+          document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(b); });
+        }
+      }catch(e){}
+    })();
+  </script>
 </body>
 </html>

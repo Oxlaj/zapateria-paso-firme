@@ -11,17 +11,18 @@ if ($method === 'GET') {
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
 if ($method === 'POST') {
-  $correo = trim($input['correo'] ?? '');
+  // Modo simplificado: solo contraseña. Determina rol según coincidencia con usuarios existentes.
   $pass = (string)($input['password'] ?? '');
-  if ($correo === '' || $pass === '') json_response(['error'=>'Campos requeridos'], 400);
-  $stmt = $pdo->prepare('SELECT id,nombre,correo,password_hash,rol FROM usuarios WHERE correo=? LIMIT 1');
-  $stmt->execute([$correo]);
-  $u = $stmt->fetch(PDO::FETCH_ASSOC);
-  if (!$u || !password_verify($pass, $u['password_hash'])) {
-    json_response(['error'=>'Credenciales inválidas'], 401);
+  if ($pass === '') json_response(['error'=>'Contraseña requerida'], 400);
+  // Estrategia: buscar todos los usuarios y verificar primer hash que calce.
+  $stmt = $pdo->query('SELECT id,nombre,correo,password_hash,rol FROM usuarios ORDER BY id');
+  $found = null;
+  while($row = $stmt->fetch(PDO::FETCH_ASSOC)){
+    if(password_verify($pass, $row['password_hash'])){ $found = $row; break; }
   }
-  $_SESSION['user'] = ['id'=>$u['id'],'nombre'=>$u['nombre'],'correo'=>$u['correo'],'rol'=>$u['rol']];
-  json_response(['ok'=>true, 'user'=>$_SESSION['user']]);
+  if(!$found){ json_response(['error'=>'Contraseña inválida'],401); }
+  $_SESSION['user'] = ['id'=>$found['id'],'nombre'=>$found['nombre'],'correo'=>$found['correo'],'rol'=>$found['rol']];
+  json_response(['ok'=>true,'user'=>$_SESSION['user']]);
 }
 
 if ($method === 'DELETE') { // logout

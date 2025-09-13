@@ -1,19 +1,27 @@
 {\rtf1\ansi\deff0{\fonttbl{\f0 Arial;}}\fs22
 \b Manual Técnico - Calzado Oxlaj\b0\line
-Versión: 1.3 \tab Fecha: 2025-08-20\line
+Versión: 2.0 \tab Fecha: 2025-09-12\line
 \line
 \b 1. Descripción general\b0\line
-Sitio estático en HTML5, CSS3 y JavaScript para la zapatería Calzado Oxlaj. Catálogo, favoritos y contacto por WhatsApp.\line
+Aplicación web HTML5/CSS3/JS con backend PHP 8 + MySQL para catálogo, CRUD administrador, carrito global, favoritos por usuario, testimonios y contacto. Soporta modo servidor (persistencia en BD) y modo offline (localStorage).\line
 \line
 \b 2. Estructura del proyecto\b0\line
-- index.html\line
-- assets/ (css, js, img/catalogo)\line
-- netlify.toml\line
-- docs/ (manuales)\line
+- index.html (layout, overlay login/roles, badge estado servidor)\line
+- assets/css/styles.css (estilos)\line
+- assets/js/data.js (datos iniciales front para offline)\line
+- assets/js/main.js (lógica UI, render, auth, CRUD, carrito, favoritos)\line
+- api/*.php (endpoints backend)\line
+- api/schema.sql (esquema normalizado)\line
+- api/config.php + config.local.php (credenciales)\line
+- docs/ (manual usuario y técnico)\line
+- netlify.toml (si se despliega estático)\line
 \line
 \b 3. Requisitos\b0\line
-- Git, VS Code (Live Server opcional), navegador moderno.\line
-- Netlify CLI o conexión por GitHub para despliegue.\line
+- PHP >= 8.0 con extensiones PDO + pdo_mysql\line
+- MySQL/MariaDB (UTF8MB4)\line
+- Navegador moderno (Chrome/Firefox/Edge)\line
+- Git y VS Code\line
+- (Opcional) Netlify sólo para modo estático offline\line
 \line
 \b 4. Branding y tema\b0\line
 - Nombre: Calzado Oxlaj\line
@@ -21,38 +29,57 @@ Sitio estático en HTML5, CSS3 y JavaScript para la zapatería Calzado Oxlaj. Ca
 - Favicon SVG inline\line
 \line
 \b 5. Arquitectura\b0\line
-- index.html: estructura y secciones\line
-- styles.css: estilos y responsividad\line
-- data.js: productos y testimonios\line
-- main.js: favoritos, WhatsApp, renderizado\line
+Front: index.html + main.js (render productos, testimonios, carrito, favoritos, login, CRUD inline).\line
+Backend (api/): autenticación de sesión PHP, endpoints REST JSON.\line
+Persistencia: MySQL (productos, tags, producto_tags, usuarios, favoritos, carrito, testimonios).\line
+Fallback: si falla conexión o está en file:// se usa modo offline (localStorage).\line
 \line
 \b 6. Catálogo\b0\line
-- Productos con imágenes locales en assets/img/catalogo/\line
-- Edita data.js para agregar productos\line
+Modo servidor: se leen de tabla productos (+ tags vía joins). CRUD admin via admin_products.php (POST/PUT/DELETE).\line
+Modo offline: copia editable en localStorage (clave oxlaj_products_override).\line
 \line
 \b 7. Favoritos\b0\line
-- Marcar productos como favoritos (localStorage, clave FAV_KEY)\line
-- Persisten en el dispositivo del usuario\line
+Servidor: tabla favoritos (usuario_id, producto_id). Requires sesión (auth.php).\line
+Offline: Set localStorage (clave oxlaj_fav_v1). Sincronicable al volver a servidor (carga inicial).\line
 \line
 \b 8. WhatsApp\b0\line
-- Botón flotante y formulario de contacto abren WhatsApp con mensaje preformateado\line
-- Configura el número en main.js (WA_NUMBER)\line
+Botón flotante y checkout del carrito generan enlaces wa.me. Ajustar WA_NUMBER en main.js.\line
 \line
 \b 9. Accesibilidad\b0\line
 - aria-labels, contraste, navegación por teclado\line
 \line
 \b 10. Desarrollo local\b0\line
-- Abrir index.html o usar Live Server\line
+1. Importar schema: mysql < schema.sql\line
+2. Crear/editar api/config.local.php con credenciales.\line
+3. Iniciar: php -S localhost:8000\line
+4. Abrir http://localhost:8000/ (no usar file://).\line
 \line
-\b 11. Flujo GitHub\b0\line
-- git add ., git commit -m "mensaje", git push origin main\line
+\b 11. Endpoints principales\b0\line
+auth.php (GET sesión, POST login password-only, DELETE logout)\line
+products.php (GET productos + tags)\line
+admin_products.php (CRUD requiere rol admin)\line
+cart.php (carrito global producto_id/cantidad)\line
+favoritos.php (GET/POST/DELETE por usuario)\line
+testimonios.php (GET testimonios)\line
+health.php (estado conexión y conteos)\line
 \line
-\b 12. Despliegue Netlify\b0\line
-- Conectar repo y publicar desde directorio raíz\line
-- netlify.toml: publish = "."\line
+\b 12. Autenticación\b0\line
+Password-only (itera usuarios y verifica hash). Admin para CRUD.\line
+Futuro: restaurar login correo + password (adaptar auth.php).\line
 \line
 \b 13. Solución de problemas\b0\line
-- Imágenes: verificar ruta en assets/img/catalogo/\line
-- WhatsApp: confirmar número internacional\line
-- Netlify: verificar push y logs\line
+No se guardan productos: verificar health.php (SVR: ON). Revisar 401 -> falta login admin.\line
+Favoritos no persisten: sesión no iniciada o modo offline.\line
+Carrito no cambia DB: revisa cart.php en Network y tabla carrito.\line
+Login falla: regenerar hash con php -r "echo password_hash('admin123', PASSWORD_DEFAULT);"\line
+Badge SVR: OFF -> estás en file:// o la conexión falló al iniciar.\line
+Error BD: revisar config.local.php y privilegios usuario MySQL.\line
+\b 14. Badge Estado Servidor\b0\line
+Elemento #serverStatusBadge indica: ON (verde), OFF (rojo), ERR/FAIL (problema conexión).\line
+Se actualiza cada 7s llamando api/health.php.\line
+\line
+\b 15. Migración modo offline -> servidor\b0\line
+Eliminar localStorage overrides (productos/favs/cart) y recargar sobre http:// para sincronizar desde DB.\line
+\line
 }
+

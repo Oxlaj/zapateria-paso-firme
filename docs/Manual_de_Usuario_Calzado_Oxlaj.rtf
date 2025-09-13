@@ -1,34 +1,53 @@
 {\rtf1\ansi\deff0{\fonttbl{\f0 Arial;}}\fs22
 \b Manual de Usuario - Calzado Oxlaj\b0\line
-Versión: 1.3 \tab Fecha: 2025-08-20\line
+Versión: 2.0 \tab Fecha: 2025-09-12\line
 \line
 \b ¿Qué es esta página?\b0\line
-Sitio oficial de Calzado Oxlaj. Catálogo, favoritos y contacto por WhatsApp.\line
+Aplicación de Calzado Oxlaj: ver productos, marcar favoritos, armar carrito y contactar por WhatsApp. Si el servidor está activo (SVR: ON) los cambios se guardan en la base de datos; si está OFF se mantienen sólo en tu navegador.\line
 \line
 \b Navegación\b0\line
-- Menú superior: Inicio, Catálogo, Nosotros, Testimonios, Contacto\line
-- Botón flotante de WhatsApp en la esquina\line
+- Menú superior: Inicio, Productos, Nosotros, Opiniones, Contacto\line
+- Botón flotante de WhatsApp en la esquina inferior derecha\line
+- Indicador "SVR:" muestra estado del servidor\line
 \line
 \b Catálogo\b0\line
-- Tarjetas con nombre, precio e imagen\line
-- Las primeras tarjetas usan fotos locales\line
-- Botón ❤ Favorito: guarda el producto en tu lista (no requiere cuenta)\line
+- Tarjetas con nombre, precio, imagen y etiquetas\line
+- Al estar en modo servidor se muestran datos desde la base de datos\line
+- En modo offline pueden diferir si se editaron localmente\line
+\line
+\b Roles / Inicio de sesión\b0\line
+- Botón "Ingresar" abre selección Cliente / Administrador\line
+- ADMIN necesita contraseña válida (admin) para poder editar productos\line
+- Si el servidor falla, se usa modo local (los cambios no pasan a la base)\line
+\line
+\b Carrito\b0\line
+- Agrega productos con el botón 🛒\line
+- El total se muestra en el panel lateral\line
+- Botón "Confirmar pedido" genera mensaje para WhatsApp\line
 \line
 \b Favoritos\b0\line
-- Pulsa ❤ para marcar/desmarcar\line
-- Tus favoritos quedan guardados en tu dispositivo\line
+- Pulsa ❤ para agregar o quitar\line
+- Con servidor y sesión: se guardan en tu cuenta\line
+- En offline: se guardan sólo en tu navegador\line
 \line
 \b Contacto\b0\line
-- Formulario: escribe tu nombre, correo y mensaje; al enviar se abrirá WhatsApp\line
+- Formulario (nombre, correo, mensaje) abre un borrador de correo o tu cliente predeterminado\line
+- Botón de WhatsApp abre chat con mensaje prellenado\line
+\line
+\b Indicador Servidor\b0\line
+- SVR: ON (verde) conectado\line
+- SVR: OFF o FAIL = modo local\line
+- Pasa a OFF si se abrió el sitio sin servidor PHP (file://) o hubo un error de conexión\line
 \line
 \b Consejos\b0\line
-- Si no abre WhatsApp: revisa que tengas la app o usa WhatsApp Web\line
-- Si no ves imágenes: verifica tu conexión o recarga la página\line
+- Si no ves "SVR: ON" y quieres que se guarde: abre el sitio en http:// con PHP iniciado\line
+- Si WhatsApp no abre, usa la versión web (web.whatsapp.com)\line
+- Si un cambio no aparece, recarga (Ctrl+F5) o verifica estado SVR\line
 \line
 \b Privacidad\b0\line
-- La página no solicita ni guarda datos personales en servidores\line
-- Los favoritos se guardan solo en tu dispositivo (localStorage)\line
+- Favoritos y carrito en offline se almacenan localmente (localStorage)\line
+- En modo servidor sólo se guarda lo necesario (productos, favoritos)\line
 \line
 \b Soporte\b0\line
-- Si algo falla, usa el botón de WhatsApp para contactarnos\line
+- Usa el botón de WhatsApp o contacta por correo si algo no funciona\line
 }

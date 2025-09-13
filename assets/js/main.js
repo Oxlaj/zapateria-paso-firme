@@ -11,22 +11,73 @@ const ROLE_PASSWORDS = { cliente: 'cliente123', admin: 'admin123' };
 function setRole(role){ try{ localStorage.setItem(ROLE_KEY, role);}catch(e){} }
 function getRole(){ try{ return localStorage.getItem(ROLE_KEY);}catch(e){ return null; } }
 function clearRole(){ try{ localStorage.removeItem(ROLE_KEY);}catch(e){} }
-// Autenticación real (cuando USE_SERVER) basada en api/auth.php (correo/password)
-let __currentUser = null; // {id,nombre,correo,rol}
-async function fetchSession(){ if(!USE_SERVER) return null; try{ const r=await fetch('api/auth.php',{credentials:'include'}); const d=await r.json(); if(d.user){__currentUser=d.user; setRole(d.user.rol);} else {__currentUser=null;} return __currentUser; }catch{return null;} }
-async function loginServer(correo,password){ const r= await fetch('api/auth.php',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({correo,password})}); const d= await r.json(); if(!r.ok) throw new Error(d.error||'Login falló'); __currentUser=d.user; setRole(d.user.rol); return d.user; }
-async function logoutServer(){ try{ await fetch('api/auth.php',{method:'DELETE',credentials:'include'});}catch{} __currentUser=null; clearRole(); }
+// Autenticación real (cuando servidor activo) basada en api/auth.php (password-only actual)
+let __currentUser = null; // {id,nombre,correo,rol} o null
+async function fetchSession(){
+  try {
+    const d = await serverJSON('api/auth.php',{method:'GET'});
+    __currentUser = d.user || null;
+    if(__currentUser){ setRole(__currentUser.rol || 'cliente'); }
+    return __currentUser;
+  } catch(e){ return null; }
+}
+async function loginServerPassword(pass){
+  const d = await serverJSON('api/auth.php',{method:'POST', body:{ password: pass }});
+  __currentUser = d.user || null;
+  if(__currentUser){ setRole(__currentUser.rol || 'cliente'); }
+  return __currentUser;
+}
+async function logoutServer(){
+  try { await serverJSON('api/auth.php',{method:'DELETE'}); } catch(e){}
+  __currentUser = null; clearRole();
+}
 // Utilidades
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-// Backend toggle (modo normalizado). Cambia a true para consumir API PHP.
-// Auto-fallback: si se abre con file:// forzamos offline para evitar errores CORS/ERR_FAILED.
-const FORCE_SERVER = true; // pon en false para desactivar definitivamente servidor.
-const USE_SERVER = (location.protocol === 'http:' || location.protocol === 'https:') && FORCE_SERVER;
-if(!USE_SERVER){
-  console.info('[CalzadoOxlaj] Modo servidor deshabilitado (origen no http/https o FORCE_SERVER=false). Operando offline.');
+// Backend toggle (modo normalizado). Siempre activo salvo que falle conexión inicial.
+const FORCE_SERVER = true; // fuerza intentar siempre servidor
+let USE_SERVER = true;
+function serverActive(){
+  return USE_SERVER && !window.__FORCED_OFFLINE;
 }
+if(location.protocol==='file:'){
+  // No se puede usar fetch PHP en file://
+  console.warn('[CalzadoOxlaj] Ejecutando en file:// -> forzando offline');
+  window.__FORCED_OFFLINE = true; USE_SERVER = false;
+} else {
+  console.info('[CalzadoOxlaj] Modo servidor activado (FORCE_SERVER)');
+}
+
+// ----- Badge estado servidor -----
+const serverBadge = document.getElementById('serverStatusBadge');
+async function refreshServerStatus(){
+  if(!serverBadge) return;
+  if(!serverActive()){
+    serverBadge.textContent = 'SVR: OFF';
+    serverBadge.style.background = '#b42318';
+    serverBadge.title = 'Servidor inactivo (offline)';
+    return;
+  }
+  try {
+    const d = await fetch('api/health.php', { credentials:'include'}).then(r=>r.json());
+    if(d.ok){
+      serverBadge.textContent = 'SVR: ON';
+      serverBadge.style.background = '#0d9488';
+      serverBadge.title = 'Conectado · productos: '+d.productos + (d.user? ' · rol: '+d.user.rol : '');
+    } else {
+      serverBadge.textContent = 'SVR: ERR';
+      serverBadge.style.background = '#b45309';
+      serverBadge.title = 'Error: '+(d.error||'desconocido');
+    }
+  } catch(e){
+    serverBadge.textContent = 'SVR: FAIL';
+    serverBadge.style.background = '#b42318';
+    serverBadge.title = 'Fallo al contactar health.php';
+  }
+}
+setInterval(refreshServerStatus, 7000);
+document.addEventListener('DOMContentLoaded', refreshServerStatus);
 
 // --- Helpers de red (modo servidor) ---
 async function serverJSON(url, options={}){
@@ -44,7 +95,9 @@ async function serverJSON(url, options={}){
 async function reloadProductsFromServer(){
   try {
     const data = await serverJSON('api/products.php', { method:'GET', headers: {}});
-    if(Array.isArray(data.products)){
+    if(!data || !Array.isArray(data.products)){
+      console.warn('[productos] respuesta inesperada', data);
+    } else {
       productsOverride = data.products;
       renderProducts();
     }
@@ -64,11 +117,13 @@ async function reloadProductsFromServer(){
 async function reloadCartFromServer(){
   try {
     const data = await serverJSON('api/cart.php', { method:'GET', headers:{} });
-    if(Array.isArray(data.cart)){
-      cart = data.cart.map(it=>({ ...it }));
-      updateCartBadge();
-      renderCart();
+    if(!data || !Array.isArray(data.cart)){
+      console.warn('[cart] respuesta inesperada', data);
+      return;
     }
+    cart = data.cart.map(it=>({ ...it }));
+    updateCartBadge();
+    renderCart();
   } catch(err){
     console.warn('[cart] fallo recarga', err.message);
     if(/conectar a la base de datos/i.test(err.message||'')) window.__FORCED_OFFLINE = true;
@@ -284,7 +339,7 @@ cartClose?.addEventListener('click', closeDrawer);
 drawerOverlay?.addEventListener('click', closeDrawer);
 
 async function addToCart(prod) {
-  if (USE_SERVER){
+  if (serverActive()){
     try {
       await serverJSON('api/cart.php', { method:'POST', body:{ id: prod.id } });
       await reloadCartFromServer();
@@ -423,7 +478,7 @@ loadState();
 // cargar override de productos desde localStorage
 const PROD_KEY = 'oxlaj_products_override';
 try { productsOverride = JSON.parse(localStorage.getItem(PROD_KEY) || 'null'); } catch { productsOverride = null; }
-if (USE_SERVER) {
+  if (serverActive()) {
   reloadProductsFromServer().then(()=> reloadCartFromServer());
   // Testimonios desde servidor
   (async ()=>{
@@ -471,7 +526,7 @@ const pageFooter = document.querySelector('footer');
 const loginForm = document.getElementById('loginForm');
 const logoutBtn = document.getElementById('logoutBtn');
 const rolePasswordInput = document.getElementById('rolePassword');
-const loginEmailInput = document.getElementById('loginEmail');
+// Campo correo eliminado (login simplificado sólo contraseña)
 const pwError = document.getElementById('pwError');
 const pwToggle = document.getElementById('pwToggle');
 
@@ -547,23 +602,21 @@ loginForm?.addEventListener('submit', async (e)=>{
   const enteredPw = rolePasswordInput ? rolePasswordInput.value.trim() : '';
   if (!enteredPw){ pwError && (pwError.textContent='Ingresa la contraseña'); return; }
 
-  if (USE_SERVER){
-    // Modo servidor: requiere correo + password contra tabla usuarios
-    const correo = loginEmailInput ? loginEmailInput.value.trim() : '';
-    if(!correo){ pwError && (pwError.textContent='Ingresa el correo'); return; }
+  if(serverActive()){
     try {
-      await loginServer(correo, enteredPw);
-      const rol = getRole() || (__currentUser && __currentUser.rol) || 'cliente';
-      afterLogin(rol);
-      if (rolePasswordInput) rolePasswordInput.value='';
-      if (loginEmailInput) loginEmailInput.value='';
+      await loginServerPassword(enteredPw);
+      const r = getRole() || 'cliente';
+      afterLogin(r);
+      rolePasswordInput && (rolePasswordInput.value='');
+      return;
     } catch(err){
-      pwError && (pwError.textContent = err.message || 'Error iniciando sesión');
+      console.warn('Fallo login servidor, fallback a roles locales', err.message);
+      // fallback a local
+      USE_SERVER = false; window.__FORCED_OFFLINE = true;
+      showToast('Servidor no disponible, modo offline');
     }
-    return;
   }
-
-  // Modo offline local
+  // Fallback / modo offline
   const checked = document.querySelector("input[name='rol']:checked");
   let role = checked ? checked.value : 'cliente';
   if(!ROLE_PASSWORDS[role]) role='cliente';
@@ -573,7 +626,10 @@ loginForm?.addEventListener('submit', async (e)=>{
   if (rolePasswordInput) rolePasswordInput.value='';
 });
 
-logoutBtn?.addEventListener('click', ()=>{ clearRole(); showLogin(); });
+logoutBtn?.addEventListener('click', async ()=>{ 
+  if(serverActive()) { try { await logoutServer(); } catch(e){} }
+  clearRole(); showLogin(); 
+});
 
 pwToggle?.addEventListener('click', ()=>{
   if (!rolePasswordInput) return;
@@ -583,18 +639,7 @@ pwToggle?.addEventListener('click', ()=>{
 });
 
 // Ajustes UI dinámicos según modo servidor/offline
-document.addEventListener('DOMContentLoaded', ()=>{
-  if (USE_SERVER){
-    // Ocultar tarjetas de rol (el rol proviene del servidor) pero dejamos fallback si falla login.
-    const roleCards = document.querySelectorAll('.role-card');
-    roleCards.forEach(rc => rc.style.display='none');
-    const roleDebug = document.getElementById('roleDebug');
-    if(roleDebug) roleDebug.textContent = 'Modo servidor: ingresa correo y contraseña';
-    if(loginEmailInput){ loginEmailInput.closest('label')?.removeAttribute('hidden'); }
-  } else {
-    if(loginEmailInput){ loginEmailInput.closest('label')?.setAttribute('hidden',''); }
-  }
-});
+// (sin cambios adicionales para servidor)
 
 // (no existe enlace directo a un panel separado: CRUD es inline)
 
@@ -689,12 +734,16 @@ async function saveEdit(id){
   const finalImg = newImg || original;
   if(!title || !(price>0) || !finalImg){ showToast('Completa los campos'); return; }
   const tags = tagsStr? tagsStr.split(',').map(t=>t.trim()).filter(Boolean):[];
-  if (USE_SERVER){
+  if (serverActive()){
     try {
       await serverJSON('api/admin_products.php', { method:'PUT', body:{ id, titulo:title, precio:price, imagen:finalImg, tags } });
       showToast('Actualizado');
       await reloadProductsFromServer();
-    } catch(err){ showToast('Error guardando'); console.warn(err); }
+    } catch(err){
+      console.warn('[CRUD] fallo PUT producto', err.message);
+      if(/no autorizado|401/i.test(err.message)) showToast('Necesitas sesión admin (servidor)');
+      else showToast('Error guardando');
+    }
   } else {
     ensureOverride();
     const idx = productsOverride.findIndex(p=>p.id===id);
@@ -713,7 +762,7 @@ function deleteProduct(id){
     if(!ok) return;
     if (USE_SERVER){
       try { await serverJSON('api/admin_products.php?id='+encodeURIComponent(id), { method:'DELETE' }); showToast('Eliminado'); await reloadProductsFromServer(); }
-      catch(err){ showToast('Error eliminando'); return; }
+      catch(err){ console.warn('[CRUD] fallo DELETE producto', err.message); if(/no autorizado|401/i.test(err.message)) showToast('Necesitas sesión admin'); else showToast('Error eliminando'); return; }
     } else {
       ensureOverride();
       productsOverride = productsOverride.filter(p=>p.id!==id);
@@ -725,35 +774,7 @@ function deleteProduct(id){
   });
 }
 
-function toggleAddForm(){
-  let form = document.getElementById('adminAddForm');
-  if(form){ form.remove(); return; }
-  form = document.createElement('form');
-  form.id='adminAddForm';
-  form.className='admin-add-form';
-  form.innerHTML = `
-    <label>Título <input name="title" required></label>
-    <label>Precio <input name="price" type="number" step="0.01" required></label>
-    <div class="pe-field">Imagen
-      <div class="img-drop" data-drop>
-        <input type="file" accept="image/*" hidden>
-        <div class="img-drop__inner" tabindex="0">
-          <div class="img-drop__placeholder" data-ph>
-            <p style="margin:0;font-size:.65rem;line-height:1.2;color:#334">Arrastra una imagen o <button type="button" class="btn btn--outline btn--pick" data-pick>Selecciona</button></p>
-          </div>
-          <img alt="Vista previa" data-preview hidden>
-        </div>
-      </div>
-    </div>
-    <label>Etiquetas (coma) <input name="tags"></label>
-    <div>
-      <button type="button" class="btn btn--primary" data-admin="add-save">Guardar nuevo</button>
-      <button type="button" class="btn btn--outline" data-admin="add-cancel">Cancelar</button>
-    </div>`;
-  const bar = document.getElementById('adminCatalogBar');
-  bar?.insertAdjacentElement('afterend', form);
-  initImageDrop(form);
-}
+// (Se elimina duplicado de toggleFav local más abajo; la versión principal ya maneja servidor/offline.)
 
 async function saveNewProduct(){
   const form = document.getElementById('adminAddForm');
@@ -771,7 +792,7 @@ async function saveNewProduct(){
       showToast('Creado');
       form.remove();
       await reloadProductsFromServer();
-    } catch(err){ showToast('Error creando'); console.warn(err); }
+    } catch(err){ console.warn('[CRUD] fallo POST producto', err.message); if(/no autorizado|401/i.test(err.message)) showToast('Necesitas sesión admin'); else showToast('Error creando'); }
   } else {
     ensureOverride();
     const nextId = currentProducts().reduce((m,p)=> Math.max(m,p.id),0)+1;
