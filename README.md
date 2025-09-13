@@ -53,6 +53,12 @@ Tablas principales: `productos`, `tags`, `producto_tags`, `testimonios`, `usuari
    ```
 2. Crear BD y ejecutar el script SQL normalizado.
 3. Copiar `api/config.local.php.example` a `api/config.local.php` y ajustar credenciales.
+      - Ejemplo local rápido (NO usar en producción): usuario MySQL `root` con contraseña `admin`.
+      - Si tu servidor ya tiene root sin contraseña y quieres ponerle `admin`, en MySQL 8 ejecuta:
+         ```sql
+         ALTER USER 'root'@'localhost' IDENTIFIED BY 'admin'; FLUSH PRIVILEGES;
+         ```
+         (Recomendado solo en entorno controlado local.)
 4. (Opcional) Insertar usuario admin:
    ```sql
    INSERT INTO usuarios (nombre,correo,password_hash,rol) VALUES ('Admin','admin@example.com', PASSWORD_HASH_AQUI, 'admin');
