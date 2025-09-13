@@ -21,7 +21,12 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 // Backend toggle (modo normalizado). Cambia a true para consumir API PHP.
-const USE_SERVER = true; // Modo servidor activo: login real (correo + password)
+// Auto-fallback: si se abre con file:// forzamos offline para evitar errores CORS/ERR_FAILED.
+const FORCE_SERVER = true; // pon en false para desactivar definitivamente servidor.
+const USE_SERVER = (location.protocol === 'http:' || location.protocol === 'https:') && FORCE_SERVER;
+if(!USE_SERVER){
+  console.info('[CalzadoOxlaj] Modo servidor deshabilitado (origen no http/https o FORCE_SERVER=false). Operando offline.');
+}
 
 // --- Helpers de red (modo servidor) ---
 async function serverJSON(url, options={}){
