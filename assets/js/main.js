@@ -11,9 +11,56 @@ const ROLE_PASSWORDS = { cliente: 'cliente123', admin: 'admin123' };
 function setRole(role){ try{ localStorage.setItem(ROLE_KEY, role);}catch(e){} }
 function getRole(){ try{ return localStorage.getItem(ROLE_KEY);}catch(e){ return null; } }
 function clearRole(){ try{ localStorage.removeItem(ROLE_KEY);}catch(e){} }
+// Autenticación real (cuando USE_SERVER) basada en api/auth.php (correo/password)
+let __currentUser = null; // {id,nombre,correo,rol}
+async function fetchSession(){ if(!USE_SERVER) return null; try{ const r=await fetch('api/auth.php',{credentials:'include'}); const d=await r.json(); if(d.user){__currentUser=d.user; setRole(d.user.rol);} else {__currentUser=null;} return __currentUser; }catch{return null;} }
+async function loginServer(correo,password){ const r= await fetch('api/auth.php',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({correo,password})}); const d= await r.json(); if(!r.ok) throw new Error(d.error||'Login falló'); __currentUser=d.user; setRole(d.user.rol); return d.user; }
+async function logoutServer(){ try{ await fetch('api/auth.php',{method:'DELETE',credentials:'include'});}catch{} __currentUser=null; clearRole(); }
 // Utilidades
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+// Backend toggle (modo normalizado). Cambia a true para consumir API PHP.
+const USE_SERVER = true; // Producción: consume API PHP / Base de datos
+
+// --- Helpers de red (modo servidor) ---
+async function serverJSON(url, options={}){
+  const opt = { headers: { 'Content-Type':'application/json' }, credentials:'include', ...options};
+  if (opt.body && typeof opt.body !== 'string') opt.body = JSON.stringify(opt.body);
+  const res = await fetch(url, opt);
+  let data = null; try { data = await res.json(); } catch { /* noop */ }
+  if(!res.ok){
+    const msg = (data && (data.error||data.detalle)) || ('Error '+res.status);
+    throw new Error(msg);
+  }
+  return data;
+}
+
+async function reloadProductsFromServer(){
+  try {
+    const data = await serverJSON('api/products.php', { method:'GET', headers: {}});
+    if(Array.isArray(data.products)){
+      productsOverride = data.products;
+      renderProducts();
+    }
+  } catch(err){
+    console.warn('[productos] fallo recarga', err.message);
+    showToast('Error recargando productos');
+  }
+}
+
+async function reloadCartFromServer(){
+  try {
+    const data = await serverJSON('api/cart.php', { method:'GET', headers:{} });
+    if(Array.isArray(data.cart)){
+      cart = data.cart.map(it=>({ ...it }));
+      updateCartBadge();
+      renderCart();
+    }
+  } catch(err){
+    console.warn('[cart] fallo recarga', err.message);
+  }
+}
 
 // Menu responsive
 const navToggle = $('.nav__toggle');
@@ -93,7 +140,8 @@ const slider = $('#testimonialSlider');
 function renderTestimonials() {
   if (!slider) return;
   slider.innerHTML = '';
-  TESTIMONIALS.forEach(t => {
+  const list = (window.__TESTIMONIALS || TESTIMONIALS);
+  list.forEach(t => {
     const card = document.createElement('article');
     card.className = 'testimonial';
     card.innerHTML = `<p>“${t.text}”</p><div class="testimonial__name">${t.name}</div>`;
@@ -222,15 +270,31 @@ cartBtn?.addEventListener('click', openDrawer);
 cartClose?.addEventListener('click', closeDrawer);
 drawerOverlay?.addEventListener('click', closeDrawer);
 
-function addToCart(prod) {
+async function addToCart(prod) {
+  if (USE_SERVER){
+    try {
+      await serverJSON('api/cart.php', { method:'POST', body:{ id: prod.id } });
+      await reloadCartFromServer();
+      showToast('Producto agregado');
+    } catch(err){ showToast('Error carrito'); console.warn(err); }
+    return;
+  }
   const idx = cart.findIndex(i => i.id === prod.id);
   if (idx >= 0) cart[idx].qty += 1; else cart.push({ id: prod.id, title: prod.title, price: prod.price, img: prod.img, qty: 1 });
   saveCart(); updateCartBadge(); renderCart(); showToast('Producto agregado al carrito');
 }
-function removeFromCart(id) {
+async function removeFromCart(id) {
+  if (USE_SERVER){
+    try { await serverJSON('api/cart.php?id='+encodeURIComponent(id), { method:'DELETE' }); await reloadCartFromServer(); } catch(err){ showToast('Error carrito'); }
+    return;
+  }
   cart = cart.filter(i => i.id !== id); saveCart(); updateCartBadge(); renderCart();
 }
-function setQty(id, qty) {
+async function setQty(id, qty) {
+  if (USE_SERVER){
+    try { await serverJSON('api/cart.php', { method:'PUT', body:{ id, qty: Math.max(1, qty) } }); await reloadCartFromServer(); } catch(err){ showToast('Error cantidad'); }
+    return;
+  }
   const it = cart.find(i => i.id === id); if (!it) return; it.qty = Math.max(1, qty); saveCart(); updateCartBadge(); renderCart();
 }
 function renderCart() {
@@ -290,6 +354,24 @@ cartCheckout?.addEventListener('click', () => {
 // ----- Favoritos -----
 function isFav(id) { return favs.has(id); }
 function toggleFav(id) {
+  if (USE_SERVER){
+    (async()=>{
+      try{
+        const exists = favs.has(id);
+        if(exists){
+          await serverJSON('api/favoritos.php?id='+encodeURIComponent(id), { method:'DELETE' });
+          favs.delete(id);
+        } else {
+          await serverJSON('api/favoritos.php', { method:'POST', body:{ id } });
+          favs.add(id);
+        }
+        updateFavButtons();
+        showToast(favs.has(id)?'Agregado a favoritos':'Quitado de favoritos');
+        saveFavs(); // copia local para fallback
+      }catch(err){ showToast('Error favoritos'); }
+    })();
+    return;
+  }
   if (favs.has(id)) favs.delete(id); else favs.add(id);
   saveFavs();
   updateFavButtons();
@@ -328,9 +410,35 @@ loadState();
 // cargar override de productos desde localStorage
 const PROD_KEY = 'oxlaj_products_override';
 try { productsOverride = JSON.parse(localStorage.getItem(PROD_KEY) || 'null'); } catch { productsOverride = null; }
-renderProducts();
-renderTestimonials();
-renderCart();
+if (USE_SERVER) {
+  reloadProductsFromServer().then(()=> reloadCartFromServer());
+  // Testimonios desde servidor
+  (async ()=>{
+    try {
+      const data = await serverJSON('api/testimonios.php',{method:'GET'});
+      if(Array.isArray(data.testimonios)){
+        window.__TESTIMONIALS = data.testimonios.map(t=>({ text:t.texto || t.text || t.mensaje || '', name: t.nombre || t.name || 'Cliente' }));
+      }
+    } catch(err){ console.warn('Fallo testimonios servidor', err.message); }
+    renderTestimonials();
+  })();
+  // Favoritos desde servidor (si autenticado)
+  (async ()=>{
+    try { await fetchSession(); } catch{}
+    try {
+      const d = await serverJSON('api/favoritos.php',{method:'GET'});
+      if(Array.isArray(d.favs)){
+        favs = new Set(d.favs.map(Number));
+        saveFavs();
+        updateFavButtons();
+      }
+    } catch(err){ console.warn('Fallo favoritos servidor', err.message); }
+  })();
+} else {
+  renderProducts();
+  renderTestimonials();
+  renderCart();
+}
 
 // Escuchar cambios de productos en otras pestañas (sin backend) y refrescar
 window.addEventListener('storage', (e)=>{
@@ -419,26 +527,39 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 
-loginForm?.addEventListener('submit', (e)=>{
+loginForm?.addEventListener('submit', async (e)=>{
   e.preventDefault();
-
-  //ACA ESTA EL HANDLER DEL LOGIN
-  // Leer directamente el radio seleccionado (evita problemas si FormData falla en algunos navegadores por reflow)
+  if (USE_SERVER){
+    const emailInput = document.getElementById('authEmail');
+    const passInput = document.getElementById('authPassword');
+    const correo = emailInput? emailInput.value.trim():'';
+    const pass = passInput? passInput.value.trim():'';
+    if(!correo || !pass){ pwError && (pwError.textContent='Completa email y contraseña'); return; }
+    try {
+      pwError && (pwError.textContent='');
+      const user = await loginServer(correo, pass);
+      afterLogin(user.rol);
+      if(passInput) passInput.value='';
+    } catch(err){ pwError && (pwError.textContent=err.message||'Error de autenticación'); }
+    return;
+  }
+  // Modo offline (roles fijos)
   const checked = document.querySelector("input[name='rol']:checked");
   let role = checked ? checked.value : 'cliente';
-  if(!ROLE_PASSWORDS[role]) { console.warn('[login] rol desconocido capturado:', role, 'forzando cliente'); role='cliente'; }
+  if(!ROLE_PASSWORDS[role]) { role='cliente'; }
   const entered = rolePasswordInput ? rolePasswordInput.value.trim() : '';
   const expected = ROLE_PASSWORDS[role];
-  // (debug log removido)
   if (!entered) { pwError && (pwError.textContent='Ingresa la contraseña'); return; }
-  if (entered === 'demo') { console.warn('[login] usando bypass demo'); }
-  else if (entered !== expected) { pwError && (pwError.textContent='Contraseña incorrecta'); return; }
+  if (entered !== expected) { pwError && (pwError.textContent='Contraseña incorrecta'); return; }
   pwError && (pwError.textContent='');
   setRole(role); afterLogin(role);
   if (rolePasswordInput) rolePasswordInput.value='';
 });
 
-logoutBtn?.addEventListener('click', ()=>{ clearRole(); showLogin(); });
+logoutBtn?.addEventListener('click', async ()=>{ 
+  if (USE_SERVER){ await logoutServer(); }
+  clearRole(); showLogin(); 
+});
 
 pwToggle?.addEventListener('click', ()=>{
   if (!rolePasswordInput) return;
@@ -528,7 +649,7 @@ function enterEdit(id){
 
 function cancelEdit(){ renderProducts(); }
 
-function saveEdit(id){
+async function saveEdit(id){
   const form = productsGrid.querySelector(`form.product-edit[data-id='${id}']`);
   if(!form) return;
   const fd = new FormData(form);
@@ -538,26 +659,39 @@ function saveEdit(id){
   const newImg = form.dataset.imgData || '';
   const original = form.dataset.originalImg || '';
   const finalImg = newImg || original;
-  if(!title || !(price>0) || !finalImg){ showToast('Completa los campos (faltan datos o imagen)'); return; }
+  if(!title || !(price>0) || !finalImg){ showToast('Completa los campos'); return; }
   const tags = tagsStr? tagsStr.split(',').map(t=>t.trim()).filter(Boolean):[];
-  ensureOverride();
-  const idx = productsOverride.findIndex(p=>p.id===id);
-  if(idx<0) return;
-  productsOverride[idx] = { ...productsOverride[idx], title, price, img: finalImg, tags };
-  persistProducts();
-  showToast('Producto actualizado');
+  if (USE_SERVER){
+    try {
+      await serverJSON('api/admin_products.php', { method:'PUT', body:{ id, titulo:title, precio:price, imagen:finalImg, tags } });
+      showToast('Actualizado');
+      await reloadProductsFromServer();
+    } catch(err){ showToast('Error guardando'); console.warn(err); }
+  } else {
+    ensureOverride();
+    const idx = productsOverride.findIndex(p=>p.id===id);
+    if(idx<0) return;
+    productsOverride[idx] = { ...productsOverride[idx], title, price, img: finalImg, tags };
+    persistProducts();
+    showToast('Producto actualizado');
+  }
   renderProducts();
   setupRoleUI();
 }
 
 function deleteProduct(id){
   const prod = currentProducts().find(p=>p.id===id);
-  customConfirm(`¿Eliminar el producto "${prod?prod.title:''}"?`).then(ok=>{
+  customConfirm(`¿Eliminar el producto "${prod?prod.title:''}"?`).then(async ok=>{
     if(!ok) return;
-    ensureOverride();
-    productsOverride = productsOverride.filter(p=>p.id!==id);
-    persistProducts();
-    showToast('Producto eliminado');
+    if (USE_SERVER){
+      try { await serverJSON('api/admin_products.php?id='+encodeURIComponent(id), { method:'DELETE' }); showToast('Eliminado'); await reloadProductsFromServer(); }
+      catch(err){ showToast('Error eliminando'); return; }
+    } else {
+      ensureOverride();
+      productsOverride = productsOverride.filter(p=>p.id!==id);
+      persistProducts();
+      showToast('Producto eliminado');
+    }
     renderProducts();
     setupRoleUI();
   });
@@ -593,7 +727,7 @@ function toggleAddForm(){
   initImageDrop(form);
 }
 
-function saveNewProduct(){
+async function saveNewProduct(){
   const form = document.getElementById('adminAddForm');
   if(!form) return;
   const fd = new FormData(form);
@@ -601,14 +735,23 @@ function saveNewProduct(){
   const price = parseFloat(String(fd.get('price')||'0'));
   const tagsStr = String(fd.get('tags')||'').trim();
   const imgData = form.dataset.imgData || '';
-  if(!title || !(price>0) || !imgData){ showToast('Completa los campos (falta imagen)'); return; }
+  if(!title || !(price>0) || !imgData){ showToast('Completa los campos'); return; }
   const tags = tagsStr? tagsStr.split(',').map(t=>t.trim()).filter(Boolean):[];
-  ensureOverride();
-  const nextId = currentProducts().reduce((m,p)=> Math.max(m,p.id),0)+1;
-  productsOverride.push({ id: nextId, title, price, img: imgData, tags });
-  persistProducts();
-  form.remove();
-  showToast('Producto creado');
+  if (USE_SERVER){
+    try {
+      await serverJSON('api/admin_products.php', { method:'POST', body:{ titulo:title, precio:price, imagen:imgData, tags } });
+      showToast('Creado');
+      form.remove();
+      await reloadProductsFromServer();
+    } catch(err){ showToast('Error creando'); console.warn(err); }
+  } else {
+    ensureOverride();
+    const nextId = currentProducts().reduce((m,p)=> Math.max(m,p.id),0)+1;
+    productsOverride.push({ id: nextId, title, price, img: imgData, tags });
+    persistProducts();
+    form.remove();
+    showToast('Producto creado');
+  }
   renderProducts();
   setupRoleUI();
 }

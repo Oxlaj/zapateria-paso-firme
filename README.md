@@ -1,53 +1,84 @@
 # Calzado Oxlaj
-Sitio web estático para la zapatería Calzado Oxlaj. Catálogo, favoritos y contacto directo abriendo Gmail (o fallback mailto) y botón rápido de WhatsApp. El backend PHP/MySQL en `api/` quedó como referencia histórica y ya no se invoca desde el frontend.
+Sitio web para la zapatería Calzado Oxlaj con catálogo, carrito, favoritos, testimonios y contacto (Gmail Compose / mailto) más botón directo de WhatsApp. El modo **servidor (PHP + MySQL)** está ACTIVO por defecto (`USE_SERVER = true`) y el frontend consume los endpoints en `api/`.
 
 ## Características
-- Catálogo de productos (imágenes locales y de muestra)
-- Marcar productos como favoritos (se guarda en tu dispositivo)
-- Contacto: formulario que abre Gmail Compose dirigido al correo ingresado por el usuario y agrega **vieryoxlaj8@gmail.com** en BCC (si Gmail no está disponible se usa mailto)
+- Catálogo de productos desde MySQL (tags normalizados)
+- CRUD inline (solo ADMIN) persistente en BD (crear / editar / eliminar + drag & drop de imagen)
+- Carrito persistente (tabla `carrito`) – actualmente global (pendiente multiusuario real)
+- Favoritos por usuario autenticado (`favoritos.php`) con fallback a localStorage si no hay sesión
+- Testimonios desde tabla `testimonios`
+- Contacto: formulario que abre Gmail Compose dirigido al email ingresado y agrega **vieryoxlaj8@gmail.com** en BCC (fallback mailto)
 - Botón flotante de WhatsApp para mensaje rápido
-- Testimonios y sección de información
+- Búsqueda por nombre (modo ADMIN)
 - Diseño responsivo y accesible
-- Despliegue en Netlify y GitHub Pages
- - Búsqueda (solo modo ADMIN) por nombre de producto
+- Despliegue estático (modo offline) o dinámico (PHP) en hosting compartido / Hostinger / Apache / Nginx
 
-## Roles estáticos y administración inline
-- Al abrir el sitio (`index.html`) aparece un selector de rol (Cliente o Administrador).
-- La elección se guarda en localStorage y se puede cambiar con “Cerrar sesión”.
-- En modo ADMIN el catálogo se vuelve editable directamente (CRUD inline). Se ocultan funciones de compra y carrito.
-   - Acciones: crear, editar y eliminar productos de forma inline.
-   - Carga de imagen local mediante drag & drop o botón “Selecciona” (se guarda como Data URL en localStorage).
-   - Campo de búsqueda (solo nombre) para filtrar productos localmente mientras se administra.
-   - Los cambios viven solo en este navegador mediante la clave `oxlaj_products_override`.
-   - Para reiniciar el catálogo: borrar la clave en localStorage o limpiar datos desde la consola.
+## Autenticación y roles
+Dos modos:
+1. OFFLINE / DEMO (`USE_SERVER=false`): selector de rol (Cliente / Administrador) con contraseñas locales.
+2. SERVIDOR (`USE_SERVER=true`): login real (correo + password) vía `api/auth.php`. El CRUD requiere rol `admin` (ver tabla `usuarios`).
 
-### Contraseñas de roles
-Se validan de forma local (solo frontend, no seguro para producción):
+Sincronizados en modo servidor:
+- Productos (`products.php`, `admin_products.php`)
+- Carrito (`cart.php`)
+- Favoritos (`favoritos.php`)
+- Testimonios (`testimonios.php`)
+
+La interfaz de CRUD inline (drag & drop, búsqueda, edición rápida) funciona igual en ambos modos; la diferencia es la persistencia (localStorage vs BD).
+
+### Contraseñas (modo offline)
+Solo aplican si `USE_SERVER=false`:
 - Cliente: `cliente123`
 - Administrador: `admin123`
+Editar en el objeto `ROLE_PASSWORDS` dentro de `assets/js/main.js`.
 
-Cómo cambiarlas: editar el objeto `ROLE_PASSWORDS` en `assets/js/main.js`.
-
-Nota: El backend en PHP/MySQL existe en la carpeta `api/`, pero el frontend funciona 100% local (sin llamadas de red para carrito ni CRUD).
+### Backend normalizado
+Tablas principales: `productos`, `tags`, `producto_tags`, `testimonios`, `usuarios`, `favoritos`, `carrito` (y otras del script ampliado si se usa). El frontend ya consume estos recursos.
 
 ## Estructura
 - `index.html`: página principal (catálogo público, login de roles)
    (CRUD inline reemplaza al antiguo panel separado eliminado del repositorio.)
 - `assets/css/styles.css`: estilos
-- `assets/js/data.js`: datos de productos y testimonios
-- `assets/js/main.js`: lógica de favoritos, renderizado, carrito local, formulario vía Gmail Compose (sin backend)
+- `assets/js/data.js`: datos de fallback (modo offline)
+- `assets/js/main.js`: lógica UI (productos, CRUD, carrito, favoritos, auth, testimonios)
 - `assets/img/`: imágenes y logo
 - `docs/`: manuales técnico y de usuario
 - `netlify.toml`: configuración de despliegue
 
-## Cómo usar
-1. Clona el repositorio:
-   ```sh
+## Puesta en marcha (modo servidor por defecto)
+1. Clonar repositorio:
+   ```bash
    git clone https://github.com/Oxlaj/zapateria-paso-firme.git
    cd zapateria-paso-firme
    ```
-2. Abre `index.html` en tu navegador, o usa Live Server en VS Code.
-3. Marca favoritos y contacta por correo (formulario) o WhatsApp (botón verde).
+2. Crear BD y ejecutar el script SQL normalizado.
+3. Copiar `api/config.local.php.example` a `api/config.local.php` y ajustar credenciales.
+4. (Opcional) Insertar usuario admin:
+   ```sql
+   INSERT INTO usuarios (nombre,correo,password_hash,rol) VALUES ('Admin','admin@example.com', PASSWORD_HASH_AQUI, 'admin');
+   ```
+   Generar hash en PHP:
+   ```php
+   <?php echo password_hash('TuPasswordSeguro', PASSWORD_BCRYPT); ?>
+   ```
+5. Iniciar servidor PHP local:
+   ```bash
+   php -S 127.0.0.1:8000
+   ```
+6. Abrir `http://127.0.0.1:8000` en el navegador. El sitio consumirá la BD.
+
+### Cambiar a modo offline
+Editar `assets/js/main.js` y poner `const USE_SERVER = false;` (productos, carrito y favoritos vuelven a localStorage, login vuelve a roles estáticos).
+
+## Endpoints principales
+| Recurso | Método(s) | Endpoint | Descripción |
+|---------|-----------|----------|-------------|
+| Productos | GET | `api/products.php` | Lista productos + tags |
+| CRUD Productos | POST / PUT / DELETE | `api/admin_products.php` | Administrar productos (admin) |
+| Carrito | GET / POST / PUT / DELETE | `api/cart.php` | Estado y operaciones de carrito |
+| Favoritos | GET / POST / DELETE | `api/favoritos.php` | Gestiona favoritos del usuario |
+| Testimonios | GET | `api/testimonios.php` | Lista testimonios |
+| Autenticación | GET / POST / DELETE | `api/auth.php` | Sesión (obtener / login / logout) |
 
 ## Personalización
 - Para agregar productos iniciales con imágenes propias de forma permanente (semilla), coloca los archivos en `assets/img/catalogo/` y edita `assets/js/data.js`.
@@ -60,12 +91,12 @@ Nota: El backend en PHP/MySQL existe en la carpeta `api/`, pero el frontend func
     Coloca los archivos en `assets/img/` junto al original.
 
 ## Despliegue
-- Netlify: conecta el repo y publica desde el directorio raíz (`publish = "."`).
-- GitHub Pages: activa Pages en la rama `main`.
+- Estático (Netlify / GitHub Pages): fijar `USE_SERVER=false`.
+- Dinámico (Hostinger / cPanel / VPS): subir todo, configurar `config.local.php` o variables de entorno y listo (ya `USE_SERVER=true`).
 
 ## Manuales
 - [Manual Técnico (RTF)](docs/Manual_Tecnico_Calzado_Oxlaj.rtf)
 - [Manual de Usuario (RTF)](docs/Manual_de_Usuario_Calzado_Oxlaj.rtf)
 
 ## Soporte
-Puedes escribir desde el formulario (abre Gmail o tu cliente de correo) o usar el botón de WhatsApp para contactarnos.
+Formulario (Gmail / mailto) o WhatsApp. Para soporte técnico crear Issue en GitHub o contactar al correo BCC.
