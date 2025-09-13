@@ -762,6 +762,40 @@ function deleteProduct(id){
 
 // (Se elimina duplicado de toggleFav local más abajo; la versión principal ya maneja servidor/offline.)
 
+function toggleAddForm(){
+  const existing = document.getElementById('adminAddForm');
+  if(existing){ existing.remove(); return; }
+  if(getRole()!=='admin') return;
+  const form = document.createElement('form');
+  form.id='adminAddForm';
+  form.className='admin-add-form';
+  form.setAttribute('autocomplete','off');
+  form.innerHTML = `
+    <h3 style="margin:0;font-size:1rem">Nuevo producto</h3>
+    <label>Título<input name="title" required placeholder="Zapato clásico"/></label>
+    <label>Precio<input name="price" type="number" step="0.01" required placeholder="350"/></label>
+    <label>Imagen
+      <div class="img-drop" data-drop>
+        <input type="file" accept="image/*" hidden>
+        <div class="img-drop__inner" tabindex="0">
+          <div class="img-drop__placeholder" data-ph>
+            <p style="margin:0;font-size:.65rem;line-height:1.2;color:#334">Arrastra una imagen o <button type="button" class="btn btn--outline btn--pick" data-pick>Selecciona</button></p>
+          </div>
+          <img alt="Vista previa" data-preview hidden>
+        </div>
+      </div>
+    </label>
+    <label>Etiquetas (coma)<input name="tags" placeholder="casual, cuero"/></label>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.25rem">
+      <button type="button" class="btn btn--primary" data-admin="add-save">Guardar</button>
+      <button type="button" class="btn btn--outline" data-admin="add-cancel">Cancelar</button>
+    </div>`;
+  const anchor = document.getElementById('adminCatalogBar');
+  if(anchor) anchor.insertAdjacentElement('afterend', form); else document.body.appendChild(form);
+  initImageDrop(form, '');
+  form.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
 async function saveNewProduct(){
   const form = document.getElementById('adminAddForm');
   if(!form) return;
