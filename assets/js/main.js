@@ -585,8 +585,15 @@ loginForm?.addEventListener('submit', async (e)=>{
       rolePasswordInput && (rolePasswordInput.value='');
       return;
     } catch(err){
-      console.warn('Fallo login servidor, fallback a roles locales', err.message);
-      // fallback a local
+      console.warn('Fallo login servidor', err.message);
+      // Distinguir credencial inválida (401) de fallo real de servidor/red.
+      const msg = (err && err.message)||'';
+      if(/contraseñ|credencial|inválida|invalid/i.test(msg)){
+        // No forzamos offline, sólo mostrar error en el formulario.
+        pwError && (pwError.textContent='Contraseña incorrecta');
+        return; // no continuar a fallback local todavía
+      }
+      // Errores de conexión / otros -> fallback offline
       USE_SERVER = false; window.__FORCED_OFFLINE = true;
       showToast('Servidor no disponible, modo offline');
     }
