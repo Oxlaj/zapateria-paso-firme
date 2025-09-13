@@ -1,39 +1,27 @@
 # Calzado Oxlaj
-Sitio web para la zapatería Calzado Oxlaj con catálogo, carrito, favoritos, testimonios y contacto (Gmail Compose / mailto) más botón directo de WhatsApp. El modo **servidor (PHP + MySQL)** está ACTIVO por defecto (`USE_SERVER = true`) y el frontend consume los endpoints en `api/`.
+Sitio web para la zapatería Calzado Oxlaj con catálogo, carrito, favoritos, testimonios y contacto (Gmail Compose / mailto) más botón directo de WhatsApp. Actualmente el sitio está en **modo offline** (`USE_SERVER = false`) usando solo datos locales y roles con contraseña simple.
 
-## Características
-- Catálogo de productos desde MySQL (tags normalizados)
-- CRUD inline (solo ADMIN) persistente en BD (crear / editar / eliminar + drag & drop de imagen)
-- Carrito persistente (tabla `carrito`) – actualmente global (pendiente multiusuario real)
-- Favoritos por usuario autenticado (`favoritos.php`) con fallback a localStorage si no hay sesión
-- Testimonios desde tabla `testimonios`
-- Contacto: formulario que abre Gmail Compose dirigido al email ingresado y agrega **vieryoxlaj8@gmail.com** en BCC (fallback mailto)
-- Botón flotante de WhatsApp para mensaje rápido
+## Características (modo offline actual)
+- Catálogo base definido en `assets/js/data.js`
+- CRUD inline (solo ADMIN) persistente en tu navegador (localStorage)
+- Carrito y favoritos en localStorage
 - Búsqueda por nombre (modo ADMIN)
-- Diseño responsivo y accesible
-- Despliegue estático (modo offline) o dinámico (PHP) en hosting compartido / Hostinger / Apache / Nginx
+- Contacto: abre Gmail Compose (o mailto) con copia BCC
+- Botón rápido de WhatsApp
+- Diseño responsivo
+- Posibilidad de activar modo servidor más adelante (`USE_SERVER=true`)
 
 ## Autenticación y roles
-Dos modos:
-1. OFFLINE / DEMO (`USE_SERVER=false`): selector de rol (Cliente / Administrador) con contraseñas locales.
-2. SERVIDOR (`USE_SERVER=true`): login real (correo + password) vía `api/auth.php`. El CRUD requiere rol `admin` (ver tabla `usuarios`).
+Modo actual: solo selector local (Cliente / Administrador) con contraseñas simples.
+Si se activa el modo servidor (`USE_SERVER=true`) volverán los endpoints y autenticación real.
 
-Sincronizados en modo servidor:
-- Productos (`products.php`, `admin_products.php`)
-- Carrito (`cart.php`)
-- Favoritos (`favoritos.php`)
-- Testimonios (`testimonios.php`)
-
-La interfaz de CRUD inline (drag & drop, búsqueda, edición rápida) funciona igual en ambos modos; la diferencia es la persistencia (localStorage vs BD).
-
-### Contraseñas (modo offline)
-Solo aplican si `USE_SERVER=false`:
+### Contraseñas
 - Cliente: `cliente123`
 - Administrador: `admin123`
-Editar en el objeto `ROLE_PASSWORDS` dentro de `assets/js/main.js`.
+Editar en `ROLE_PASSWORDS` dentro de `assets/js/main.js`.
 
-### Backend normalizado
-Tablas principales: `productos`, `tags`, `producto_tags`, `testimonios`, `usuarios`, `favoritos`, `carrito` (y otras del script ampliado si se usa). El frontend ya consume estos recursos.
+### Backend (opcional desactivado)
+Existe un backend normalizado en `api/` (productos, tags, usuarios, favoritos, carrito, testimonios). No se está usando porque `USE_SERVER=false`.
 
 ## Estructura
 - `index.html`: página principal (catálogo público, login de roles)
@@ -45,36 +33,20 @@ Tablas principales: `productos`, `tags`, `producto_tags`, `testimonios`, `usuari
 - `docs/`: manuales técnico y de usuario
 - `netlify.toml`: configuración de despliegue
 
-## Puesta en marcha (modo servidor por defecto)
+## Puesta en marcha (modo offline actual)
 1. Clonar repositorio:
    ```bash
    git clone https://github.com/Oxlaj/zapateria-paso-firme.git
    cd zapateria-paso-firme
    ```
-2. Crear BD y ejecutar el script SQL normalizado.
-3. Copiar `api/config.local.php.example` a `api/config.local.php` y ajustar credenciales.
-      - Ejemplo local rápido (NO usar en producción): usuario MySQL `root` con contraseña `admin`.
-      - Si tu servidor ya tiene root sin contraseña y quieres ponerle `admin`, en MySQL 8 ejecuta:
-         ```sql
-         ALTER USER 'root'@'localhost' IDENTIFIED BY 'admin'; FLUSH PRIVILEGES;
-         ```
-         (Recomendado solo en entorno controlado local.)
-4. (Opcional) Insertar usuario admin:
-   ```sql
-   INSERT INTO usuarios (nombre,correo,password_hash,rol) VALUES ('Admin','admin@example.com', PASSWORD_HASH_AQUI, 'admin');
-   ```
-   Generar hash en PHP:
-   ```php
-   <?php echo password_hash('TuPasswordSeguro', PASSWORD_BCRYPT); ?>
-   ```
-5. Iniciar servidor PHP local:
-   ```bash
-   php -S 127.0.0.1:8000
-   ```
-6. Abrir `http://127.0.0.1:8000` en el navegador. El sitio consumirá la BD.
+2. Abrir `index.html` directamente en el navegador o usar un servidor simple (Live Server / php -S). No requiere BD.
+3. Elegir rol, ingresar la contraseña local y administrar.
 
-### Cambiar a modo offline
-Editar `assets/js/main.js` y poner `const USE_SERVER = false;` (productos, carrito y favoritos vuelven a localStorage, login vuelve a roles estáticos).
+### Activar modo servidor (opcional)
+1. Configurar BD con `api/schema.sql`.
+2. Crear `api/config.local.php` con credenciales.
+3. Cambiar en `assets/js/main.js` a `const USE_SERVER = true;`.
+4. Recargar: ahora CRUD y datos irán contra la BD.
 
 ## Endpoints principales
 | Recurso | Método(s) | Endpoint | Descripción |

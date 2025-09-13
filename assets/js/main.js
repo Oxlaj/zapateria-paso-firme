@@ -21,7 +21,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 // Backend toggle (modo normalizado). Cambia a true para consumir API PHP.
-const USE_SERVER = true; // Producción: consume API PHP / Base de datos
+const USE_SERVER = false; // Modo offline: login por roles locales
 
 // --- Helpers de red (modo servidor) ---
 async function serverJSON(url, options={}){
@@ -527,26 +527,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 
-loginForm?.addEventListener('submit', async (e)=>{
+loginForm?.addEventListener('submit', (e)=>{
   e.preventDefault();
-  if (USE_SERVER){
-    const emailInput = document.getElementById('authEmail');
-    const passInput = document.getElementById('authPassword');
-    const correo = emailInput? emailInput.value.trim():'';
-    const pass = passInput? passInput.value.trim():'';
-    if(!correo || !pass){ pwError && (pwError.textContent='Completa email y contraseña'); return; }
-    try {
-      pwError && (pwError.textContent='');
-      const user = await loginServer(correo, pass);
-      afterLogin(user.rol);
-      if(passInput) passInput.value='';
-    } catch(err){ pwError && (pwError.textContent=err.message||'Error de autenticación'); }
-    return;
-  }
-  // Modo offline (roles fijos)
   const checked = document.querySelector("input[name='rol']:checked");
   let role = checked ? checked.value : 'cliente';
-  if(!ROLE_PASSWORDS[role]) { role='cliente'; }
+  if(!ROLE_PASSWORDS[role]) role='cliente';
   const entered = rolePasswordInput ? rolePasswordInput.value.trim() : '';
   const expected = ROLE_PASSWORDS[role];
   if (!entered) { pwError && (pwError.textContent='Ingresa la contraseña'); return; }
@@ -556,10 +541,7 @@ loginForm?.addEventListener('submit', async (e)=>{
   if (rolePasswordInput) rolePasswordInput.value='';
 });
 
-logoutBtn?.addEventListener('click', async ()=>{ 
-  if (USE_SERVER){ await logoutServer(); }
-  clearRole(); showLogin(); 
-});
+logoutBtn?.addEventListener('click', ()=>{ clearRole(); showLogin(); });
 
 pwToggle?.addEventListener('click', ()=>{
   if (!rolePasswordInput) return;
