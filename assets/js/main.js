@@ -60,7 +60,10 @@ async function serverJSON(url, options={}){
   let data = null; try { data = await res.json(); } catch { /* noop */ }
   if(!res.ok){
     const msg = (data && (data.error||data.detalle)) || ('Error '+res.status);
-    throw new Error(msg);
+    const e = new Error(msg);
+    e._data = data;
+    e.status = res.status;
+    throw e;
   }
   return data;
 }
@@ -724,7 +727,7 @@ async function saveEdit(id){
     } catch(err){
       console.warn('[CRUD] fallo PUT producto', err.message);
       if(/no autorizado|401/i.test(err.message)) showToast('Necesitas sesión admin (servidor)');
-      else showToast('Error guardando');
+      else showToast(err._data?.detalle || err.message || 'Error guardando');
     }
   } else {
     ensureOverride();
@@ -745,6 +748,7 @@ function deleteProduct(id){
     if (USE_SERVER){
       try { await serverJSON('api/admin_products.php?id='+encodeURIComponent(id), { method:'DELETE' }); showToast('Eliminado'); await reloadProductsFromServer(); }
       catch(err){ console.warn('[CRUD] fallo DELETE producto', err.message); if(/no autorizado|401/i.test(err.message)) showToast('Necesitas sesión admin'); else showToast('Error eliminando'); return; }
+      
     } else {
       ensureOverride();
       productsOverride = productsOverride.filter(p=>p.id!==id);
@@ -774,7 +778,7 @@ async function saveNewProduct(){
       showToast('Creado');
       form.remove();
       await reloadProductsFromServer();
-    } catch(err){ console.warn('[CRUD] fallo POST producto', err.message); if(/no autorizado|401/i.test(err.message)) showToast('Necesitas sesión admin'); else showToast('Error creando'); }
+  } catch(err){ console.warn('[CRUD] fallo POST producto', err.message); if(/no autorizado|401/i.test(err.message)) showToast('Necesitas sesión admin'); else showToast(err._data?.detalle || err.message || 'Error creando'); }
   } else {
     ensureOverride();
     const nextId = currentProducts().reduce((m,p)=> Math.max(m,p.id),0)+1;
