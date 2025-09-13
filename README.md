@@ -1,5 +1,5 @@
 # Calzado Oxlaj
-Sitio web para la zapatería Calzado Oxlaj con catálogo, carrito, favoritos, testimonios y contacto (Gmail Compose / mailto) más botón directo de WhatsApp. Actualmente el sitio está en **modo servidor** (`USE_SERVER = true`) y persiste productos, favoritos y carrito (según endpoints) en la base de datos.
+Sitio web para la zapatería Calzado Oxlaj con catálogo, carrito, favoritos, testimonios y contacto (Gmail Compose / mailto) más botón directo de WhatsApp. Actualmente el sitio está en **modo servidor** (`USE_SERVER = true`). Si la conexión a la base de datos falla (por ejemplo, MySQL no levantado) el frontend hace **fallback automático** a modo offline para que el sitio siga funcionando con datos locales.
 
 ## Características (modo servidor activo)
 - Catálogo desde BD MySQL (endpoint `api/products.php`)
@@ -10,7 +10,8 @@ Sitio web para la zapatería Calzado Oxlaj con catálogo, carrito, favoritos, te
 - Contacto: abre Gmail Compose (o mailto) con copia BCC
 - Botón rápido de WhatsApp
 - Diseño responsivo
-- Fallback local posible cambiando `USE_SERVER=false`
+- Fallback local manual cambiando `USE_SERVER=false`
+- Fallback automático si hay error de conexión BD (mensaje: "No se pudo conectar a la base de datos")
 
 ## Autenticación y roles
 Modo actual: autenticación real usando `api/auth.php` (correo + contraseña que se verifica contra `usuarios.password_hash`).
@@ -70,7 +71,11 @@ Existe un backend normalizado en `api/` (productos, tags, usuarios, favoritos, c
 7. CRUD admin ahora persiste en la base de datos.
 
 ### Modo offline (fallback)
-Si deseas volver: cambia `USE_SERVER = false` en `main.js`. Se ocultará el campo correo y volverán las contraseñas locales.
+Manual: cambia `USE_SERVER = false` en `main.js`. Se ocultará el campo correo y volverán las contraseñas locales.
+
+Automático: si el frontend detecta error recurrente al pedir `api/products.php` (texto *"conectar a la base de datos"*) desactiva modo servidor en la sesión y renderiza con datos locales.
+
+Diagnóstico rápido BD: visitar `api/test_db.php` mostrará conexión, tablas presentes y conteos básicos.
 
 ## Endpoints principales
 | Recurso | Método(s) | Endpoint | Descripción |

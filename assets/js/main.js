@@ -51,6 +51,13 @@ async function reloadProductsFromServer(){
   } catch(err){
     console.warn('[productos] fallo recarga', err.message);
     showToast('Error recargando productos');
+    if(/conectar a la base de datos/i.test(err.message||'')){
+      console.warn('[CalzadoOxlaj] Desactivando modo servidor por fallo de BD. Usando offline.');
+      window.__FORCED_OFFLINE = true;
+      // Re-render usando datos locales
+      productsOverride = null;
+      renderProducts();
+    }
   }
 }
 
@@ -64,6 +71,7 @@ async function reloadCartFromServer(){
     }
   } catch(err){
     console.warn('[cart] fallo recarga', err.message);
+    if(/conectar a la base de datos/i.test(err.message||'')) window.__FORCED_OFFLINE = true;
   }
 }
 
