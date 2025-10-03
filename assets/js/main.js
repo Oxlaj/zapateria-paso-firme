@@ -637,6 +637,11 @@ function persistProducts(){ localStorage.setItem(PROD_KEY, JSON.stringify(produc
 function setupRoleUI(){
   if (!productsGrid) return;
   const isAdmin = getRole() === 'admin';
+  // Mostrar enlace de Dashboard sólo en admin
+  try {
+    const dashItem = document.querySelector('.nav__admin');
+    if(dashItem){ dashItem.style.display = isAdmin ? '' : 'none'; }
+  } catch(e){}
   // Insertar barra admin si hace falta
   let bar = document.getElementById('adminCatalogBar');
   if (isAdmin){
