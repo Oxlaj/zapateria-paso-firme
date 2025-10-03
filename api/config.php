@@ -17,18 +17,36 @@ function db() {
     global $DB_HOST, $DB_PORT, $DB_USER, $DB_PASS, $DB_NAME;    
     static $pdo = null;
     if ($pdo === null) {
-        try {
-            $dsn = "mysql:host={$DB_HOST};port={$DB_PORT};dbname={$DB_NAME};charset=utf8mb4";
-            $pdo = new PDO($dsn, $DB_USER, $DB_PASS, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-            ]);
-        } catch (PDOException $e) {
+        $portsToTry = [$DB_PORT];
+        // Intentar puertos comunes si estás en entorno local y el primero falla
+        foreach ([3307, 33060] as $alt){ if(!in_array($alt, $portsToTry, true)) $portsToTry[] = $alt; }
+        $lastError = null;
+        foreach($portsToTry as $p){
+            try {
+                $dsn = "mysql:host={$DB_HOST};port={$p};dbname={$DB_NAME};charset=utf8mb4";
+                $pdo = new PDO($dsn, $DB_USER, $DB_PASS, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                ]);
+                // Si conectó con un puerto alternativo, actualizar en memoria para siguientes requests
+                $DB_PORT = $p;
+                break;
+            } catch (PDOException $e) {
+                $lastError = $e;
+                $pdo = null; // asegurar reintento
+            }
+        }
+        if($pdo === null){
             http_response_code(500);
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['error'=>'No se pudo conectar a la base de datos','detalle'=>$e->getMessage()], JSON_UNESCAPED_UNICODE);
-            exit;        
+            echo json_encode([
+                'error'=>'No se pudo conectar a la base de datos',
+                'host'=>$DB_HOST,
+                'puertos_intentados'=>$portsToTry,
+                'detalle'=>$lastError? $lastError->getMessage() : 'desconocido'
+            ], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+            exit;
         }
     }
     return $pdo;
