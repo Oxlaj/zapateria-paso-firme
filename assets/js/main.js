@@ -638,15 +638,23 @@ function persistProducts(){ localStorage.setItem(PROD_KEY, JSON.stringify(produc
 
 function setupRoleUI(){
   if (!productsGrid) return;
-  const isAdmin = serverActive() ? (!!__currentUser && __currentUser.rol === 'admin') : (getRole() === 'admin');
+  // Visibilidad: siempre mostrar si el rol seleccionado es 'admin'
+  const isAdminRole = (getRole() === 'admin');
   // Mostrar enlace de Dashboard sólo en admin
   try {
     const dashItem = document.querySelector('.nav__admin');
-    if(dashItem){ dashItem.style.display = isAdmin ? '' : 'none'; }
+    if(dashItem){
+      dashItem.style.display = isAdminRole ? '' : 'none';
+      const a = dashItem.querySelector('a');
+      if(a){
+        const hasServerAdminSession = serverActive() && __currentUser && __currentUser.rol === 'admin';
+        a.setAttribute('href', hasServerAdminSession ? 'dashboard.php' : 'panel/dashboard.html');
+      }
+    }
   } catch(e){}
   // Insertar barra admin si hace falta
   let bar = document.getElementById('adminCatalogBar');
-  if (isAdmin){
+  if (isAdminRole){
     if (!bar){
       bar = document.createElement('div');
       bar.id = 'adminCatalogBar';
@@ -673,7 +681,7 @@ function setupRoleUI(){
   }
   // Ocultar / mostrar carrito
   const cartRelated = [cartBtn, drawer, drawerOverlay];
-  cartRelated.forEach(el=>{ if(!el) return; el.style.display = isAdmin ? 'none':'', el.hidden = isAdmin? true:false; });
+  cartRelated.forEach(el=>{ if(!el) return; el.style.display = isAdminRole ? 'none':'', el.hidden = isAdminRole? true:false; });
 }
 
 function htmlEscape(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
