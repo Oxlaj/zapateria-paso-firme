@@ -135,6 +135,13 @@ function createProductCard(p) {
         ${[37,38,39,40,41,42,43].map(n=>`<option value="${n}">${n}</option>`).join('')}
       </select>
     </div>` : '';
+  const colorPicker = !isAdmin ? `<div class="product__color" style="margin-top:.35rem">
+      <label style="display:block;font-size:.75rem;margin:.25rem 0 .35rem">Color</label>
+      <select data-color style="padding:.35rem .5rem;border:1px solid #cbd5e1;border-radius:6px">
+        <option value="negro">Negro</option>
+        <option value="cafe">Café</option>
+      </select>
+    </div>` : '';
   el.innerHTML = `
     <img class="product__img" src="${p.img}" alt="${p.title}" loading="lazy"/>
     <div class="product__body">
@@ -144,6 +151,7 @@ function createProductCard(p) {
     </div>
     <div class="product__actions" ${isAdmin? 'style="display:none"':''}>
       ${sizePicker}
+      ${colorPicker}
       <button class="btn btn--outline" data-action="wish" data-id="${p.id}" aria-label="Agregar a favoritos">❤ Favorito</button>
       <button class="btn btn--primary" data-action="buy" data-id="${p.id}" aria-label="Agregar al carrito">🛒 Agregar</button>
     </div>`;

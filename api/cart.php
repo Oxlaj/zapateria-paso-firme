@@ -9,11 +9,12 @@ ensure_table('productos');
 
 try {
     if ($method === 'GET') {
-        $items = $pdo->query('SELECT c.producto_id as id, c.talla, p.titulo, p.precio, p.imagen, c.cantidad FROM carrito c JOIN productos p ON p.id = c.producto_id ORDER BY c.producto_id, c.talla')->fetchAll(PDO::FETCH_ASSOC);
+        $items = $pdo->query('SELECT c.producto_id as id, c.talla, c.color, p.titulo, p.precio, p.imagen, c.cantidad FROM carrito c JOIN productos p ON p.id = c.producto_id ORDER BY c.producto_id, c.talla, c.color')->fetchAll(PDO::FETCH_ASSOC);
         $mapped = array_map(function($r){
             return [
                 'id' => (int)$r['id'],
                 'size' => (string)($r['talla'] ?? ''),
+                'color' => (string)($r['color'] ?? ''),
                 'title' => $r['titulo'],
                 'price' => (float)$r['precio'],
                 'img' => $r['imagen'],
@@ -28,26 +29,31 @@ try {
     if ($method === 'POST') { // agregar o incrementar
     $id = (int)($input['id'] ?? 0);
     $talla = trim((string)($input['talla'] ?? ''));
+    $color = trim((string)($input['color'] ?? ''));
         if ($id <= 0) json_response(['error'=>'id requerido'],400);
     if ($talla==='') json_response(['error'=>'talla requerida'],400);
-    $stmt = $pdo->prepare('INSERT INTO carrito (producto_id, talla, cantidad) VALUES (?,?,1) ON DUPLICATE KEY UPDATE cantidad = cantidad + 1');
-    $stmt->execute([$id,$talla]);
+    if ($color==='') json_response(['error'=>'color requerido'],400);
+    $stmt = $pdo->prepare('INSERT INTO carrito (producto_id, talla, color, cantidad) VALUES (?,?,?,1) ON DUPLICATE KEY UPDATE cantidad = cantidad + 1');
+    $stmt->execute([$id,$talla,$color]);
         json_response(['ok'=>true]);
     }
 
     if ($method === 'PUT') { // actualizar cantidad
     $id = (int)($input['id'] ?? 0);
     $talla = trim((string)($input['talla'] ?? ''));
+    $color = trim((string)($input['color'] ?? ''));
         $qty = max(1, (int)($input['qty'] ?? 1));
-    $pdo->prepare('UPDATE carrito SET cantidad=? WHERE producto_id=? AND talla=?')->execute([$qty,$id,$talla]);
+    $pdo->prepare('UPDATE carrito SET cantidad=? WHERE producto_id=? AND talla=? AND color=?')->execute([$qty,$id,$talla,$color]);
         json_response(['ok'=>true]);
     }
 
     if ($method === 'DELETE') {
         $id = (int)($_GET['id'] ?? 0);
         $talla = trim((string)($_GET['talla'] ?? ''));
+        $color = trim((string)($_GET['color'] ?? ''));
         if ($id>0) { 
-            if($talla!=='') $pdo->prepare('DELETE FROM carrito WHERE producto_id=? AND talla=?')->execute([$id,$talla]);
+            if($talla!=='' && $color!=='') $pdo->prepare('DELETE FROM carrito WHERE producto_id=? AND talla=? AND color=?')->execute([$id,$talla,$color]);
+            elseif($talla!=='') $pdo->prepare('DELETE FROM carrito WHERE producto_id=? AND talla=?')->execute([$id,$talla]);
             else $pdo->prepare('DELETE FROM carrito WHERE producto_id=?')->execute([$id]);
         }
         json_response(['ok'=>true]);

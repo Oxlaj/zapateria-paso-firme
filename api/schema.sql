@@ -40,8 +40,9 @@ CREATE TABLE IF NOT EXISTS producto_tags (
 CREATE TABLE IF NOT EXISTS carrito (
   producto_id INT UNSIGNED NOT NULL,
   talla VARCHAR(5) NOT NULL DEFAULT '',
+  color ENUM('negro','cafe') NOT NULL DEFAULT 'negro',
   cantidad INT NOT NULL DEFAULT 1,
-  PRIMARY KEY (producto_id, talla),
+  PRIMARY KEY (producto_id, talla, color),
   CONSTRAINT fk_carrito_producto FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
 );
 
