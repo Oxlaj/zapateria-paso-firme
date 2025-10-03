@@ -129,6 +129,12 @@ function createProductCard(p) {
   el.className = 'product';
   el.setAttribute('data-id', String(p.id));
   const isAdmin = getRole && getRole() === 'admin';
+  const sizePicker = !isAdmin ? `<div class="product__size">
+      <label style="display:block;font-size:.75rem;margin:.25rem 0 .35rem">Talla</label>
+      <select data-size style="padding:.35rem .5rem;border:1px solid #cbd5e1;border-radius:6px">
+        ${[37,38,39,40,41,42,43].map(n=>`<option value="${n}">${n}</option>`).join('')}
+      </select>
+    </div>` : '';
   el.innerHTML = `
     <img class="product__img" src="${p.img}" alt="${p.title}" loading="lazy"/>
     <div class="product__body">
@@ -137,6 +143,7 @@ function createProductCard(p) {
       <div class="product__tags">${(p.tags||[]).map(t => `<span class='tag'>${t}</span>`).join('')}</div>
     </div>
     <div class="product__actions" ${isAdmin? 'style="display:none"':''}>
+      ${sizePicker}
       <button class="btn btn--outline" data-action="wish" data-id="${p.id}" aria-label="Agregar a favoritos">❤ Favorito</button>
       <button class="btn btn--primary" data-action="buy" data-id="${p.id}" aria-label="Agregar al carrito">🛒 Agregar</button>
     </div>`;
@@ -317,29 +324,35 @@ drawerOverlay?.addEventListener('click', closeDrawer);
 async function addToCart(prod) {
   if (serverActive()){
     try {
-      await serverJSON('api/cart.php', { method:'POST', body:{ id: prod.id } });
+      const card = document.querySelector(`.product[data-id='${prod.id}']`);
+      const sel = card?.querySelector('[data-size]');
+      const talla = sel ? String(sel.value) : '';
+      await serverJSON('api/cart.php', { method:'POST', body:{ id: prod.id, talla } });
       await reloadCartFromServer();
       showToast('Producto agregado');
     } catch(err){ showToast('Error carrito'); console.warn(err); }
     return;
   }
-  const idx = cart.findIndex(i => i.id === prod.id);
-  if (idx >= 0) cart[idx].qty += 1; else cart.push({ id: prod.id, title: prod.title, price: prod.price, img: prod.img, qty: 1 });
+  const card = document.querySelector(`.product[data-id='${prod.id}']`);
+  const sel = card?.querySelector('[data-size]');
+  const talla = sel ? String(sel.value) : '';
+  const idx = cart.findIndex(i => i.id === prod.id && i.size === talla);
+  if (idx >= 0) cart[idx].qty += 1; else cart.push({ id: prod.id, title: prod.title, price: prod.price, img: prod.img, size: talla, qty: 1 });
   saveCart(); updateCartBadge(); renderCart(); showToast('Producto agregado al carrito');
 }
-async function removeFromCart(id) {
+async function removeFromCart(id, size='') {
   if (USE_SERVER){
-    try { await serverJSON('api/cart.php?id='+encodeURIComponent(id), { method:'DELETE' }); await reloadCartFromServer(); } catch(err){ showToast('Error carrito'); }
+    try { await serverJSON('api/cart.php?id='+encodeURIComponent(id)+'&talla='+encodeURIComponent(size), { method:'DELETE' }); await reloadCartFromServer(); } catch(err){ showToast('Error carrito'); }
     return;
   }
-  cart = cart.filter(i => i.id !== id); saveCart(); updateCartBadge(); renderCart();
+  cart = cart.filter(i => !(i.id === id && String(i.size||'')===String(size))); saveCart(); updateCartBadge(); renderCart();
 }
-async function setQty(id, qty) {
+async function setQty(id, qty, size='') {
   if (USE_SERVER){
-    try { await serverJSON('api/cart.php', { method:'PUT', body:{ id, qty: Math.max(1, qty) } }); await reloadCartFromServer(); } catch(err){ showToast('Error cantidad'); }
+    try { await serverJSON('api/cart.php', { method:'PUT', body:{ id, talla: size, qty: Math.max(1, qty) } }); await reloadCartFromServer(); } catch(err){ showToast('Error cantidad'); }
     return;
   }
-  const it = cart.find(i => i.id === id); if (!it) return; it.qty = Math.max(1, qty); saveCart(); updateCartBadge(); renderCart();
+  const it = cart.find(i => i.id === id && String(i.size||'')===String(size)); if (!it) return; it.qty = Math.max(1, qty); saveCart(); updateCartBadge(); renderCart();
 }
 function renderCart() {
   if (!cartList || !cartEmpty || !cartTotalEl) return;
@@ -360,13 +373,13 @@ function renderCart() {
       <img class="cart__img" src="${it.img}" alt="${it.title}">
       <div>
         <div class="cart__title">${it.title}</div>
-        <div class="cart__price">${formatPrice(it.price)} · Subtotal: ${formatPrice(sub)}</div>
-        <button class="cart__remove" data-role="remove" data-id="${it.id}">Quitar</button>
+        <div class="cart__price">Talla: ${it.size||'-'} · ${formatPrice(it.price)} · Subtotal: ${formatPrice(sub)}</div>
+        <button class="cart__remove" data-role="remove" data-id="${it.id}" data-size="${it.size||''}">Quitar</button>
       </div>
       <div class="cart__controls">
-        <button class="cart__btn" data-role="dec" data-id="${it.id}">−</button>
+        <button class="cart__btn" data-role="dec" data-id="${it.id}" data-size="${it.size||''}">−</button>
         <span class="cart__qty">${it.qty}</span>
-        <button class="cart__btn" data-role="inc" data-id="${it.id}">+</button>
+        <button class="cart__btn" data-role="inc" data-id="${it.id}" data-size="${it.size||''}">+</button>
       </div>`;
     cartList.appendChild(li);
   });
@@ -376,13 +389,14 @@ cartList?.addEventListener('click', (e) => {
   const btn = e.target.closest('button');
   if (!btn) return;
   const id = Number(btn.getAttribute('data-id'));
+  const size = String(btn.getAttribute('data-size')||'');
   const role = btn.getAttribute('data-role');
   if (role === 'inc') {
-    const it = cart.find(i => i.id === id); if (!it) return; setQty(id, it.qty + 1);
+    const it = cart.find(i => i.id === id && (String(i.size||'')===size)); if (!it) return; setQty(id, it.qty + 1, size);
   } else if (role === 'dec') {
-    const it = cart.find(i => i.id === id); if (!it) return; setQty(id, Math.max(1, it.qty - 1));
+    const it = cart.find(i => i.id === id && (String(i.size||'')===size)); if (!it) return; setQty(id, Math.max(1, it.qty - 1), size);
   } else if (role === 'remove') {
-    removeFromCart(id);
+    removeFromCart(id, size);
   }
 });
 
