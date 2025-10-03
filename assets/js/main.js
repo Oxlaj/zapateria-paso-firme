@@ -455,6 +455,8 @@ loadState();
 const PROD_KEY = 'oxlaj_products_override';
 try { productsOverride = JSON.parse(localStorage.getItem(PROD_KEY) || 'null'); } catch { productsOverride = null; }
   if (serverActive()) {
+  // Primero intenta obtener la sesión real; esto habilitará UI admin correctamente
+  (async()=>{ try { await fetchSession(); } catch(_){} finally { setupRoleUI(); } })();
   reloadProductsFromServer().then(()=> reloadCartFromServer());
   // Testimonios desde servidor
   (async ()=>{
@@ -636,7 +638,7 @@ function persistProducts(){ localStorage.setItem(PROD_KEY, JSON.stringify(produc
 
 function setupRoleUI(){
   if (!productsGrid) return;
-  const isAdmin = getRole() === 'admin';
+  const isAdmin = serverActive() ? (!!__currentUser && __currentUser.rol === 'admin') : (getRole() === 'admin');
   // Mostrar enlace de Dashboard sólo en admin
   try {
     const dashItem = document.querySelector('.nav__admin');

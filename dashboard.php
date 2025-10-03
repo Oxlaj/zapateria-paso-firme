@@ -5,7 +5,8 @@ require __DIR__ . '/api/config.php';
 // Usar verificación de sesión para páginas HTML (redirección en vez de JSON)
 $u = current_user();
 if(!$u || ($u['rol'] ?? '') !== 'admin'){
-    header('Location: /?unauthorized=1');
+    // redirigir relativo por si el sitio no está en la raíz del host
+    header('Location: index.html?unauthorized=1');
     exit;
 }
 
