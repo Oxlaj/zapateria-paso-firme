@@ -17,7 +17,7 @@ USE calzado_oxlaj;
 -- Productos y Tags
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS productos (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   titulo VARCHAR(150) NOT NULL,
   precio DECIMAL(10,2) NOT NULL DEFAULT 0,
   imagen MEDIUMTEXT NULL,
@@ -25,13 +25,13 @@ CREATE TABLE IF NOT EXISTS productos (
 );
 
 CREATE TABLE IF NOT EXISTS tags (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(60) NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS producto_tags (
-  producto_id INT NOT NULL,
-  tag_id INT NOT NULL,
+  producto_id INT UNSIGNED NOT NULL,
+  tag_id INT UNSIGNED NOT NULL,
   PRIMARY KEY (producto_id, tag_id),
   CONSTRAINT fk_pt_producto FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
   CONSTRAINT fk_pt_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS carrito (
 -- Usuarios, Favoritos, Testimonios
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS usuarios (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(120) NOT NULL,
   correo VARCHAR(180) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
@@ -59,8 +59,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
 );
 
 CREATE TABLE IF NOT EXISTS favoritos (
-  usuario_id INT NOT NULL,
-  producto_id INT NOT NULL,
+  usuario_id INT UNSIGNED NOT NULL,
+  producto_id INT UNSIGNED NOT NULL,
   PRIMARY KEY (usuario_id, producto_id),
   KEY idx_fav_producto (producto_id),
   CONSTRAINT fk_fav_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS favoritos (
 );
 
 CREATE TABLE IF NOT EXISTS testimonios (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(120) NOT NULL,
   texto TEXT NOT NULL,
   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS testimonios (
 -- Mensajes de contacto (para futura persistencia del formulario)
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS mensajes_contacto (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(120),
   correo VARCHAR(180),
   mensaje TEXT,
@@ -89,8 +89,8 @@ CREATE TABLE IF NOT EXISTS mensajes_contacto (
 -- Pedidos (plan futuro) y detalle
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS pedidos (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  usuario_id INT NULL,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT UNSIGNED NULL,
   estado VARCHAR(30) DEFAULT 'pendiente',
   total DECIMAL(10,2) DEFAULT 0,
   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -98,9 +98,9 @@ CREATE TABLE IF NOT EXISTS pedidos (
 );
 
 CREATE TABLE IF NOT EXISTS pedido_items (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  pedido_id INT NOT NULL,
-  producto_id INT NOT NULL,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  pedido_id INT UNSIGNED NOT NULL,
+  producto_id INT UNSIGNED NOT NULL,
   cantidad INT NOT NULL,
   precio DECIMAL(10,2) NOT NULL,
   CONSTRAINT fk_pi_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
