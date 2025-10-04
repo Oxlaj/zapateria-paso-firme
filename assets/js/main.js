@@ -57,10 +57,24 @@ async function serverJSON(url, options={}){
   const opt = { headers: { 'Content-Type':'application/json' }, credentials:'include', ...options};
   if (opt.body && typeof opt.body !== 'string') opt.body = JSON.stringify(opt.body);
   const res = await fetch(url, opt);
-  let data = null; try { data = await res.json(); } catch { /* noop */ }
+  const ct = (res.headers.get('content-type')||'').toLowerCase();
+  let data = null;
+  if (ct.includes('application/json')) {
+    try { data = await res.json(); } catch { data = null; }
+  } else {
+    // Intento de parseo por si el servidor no envió header correcto
+    try { data = await res.json(); } catch { data = null; }
+  }
   if(!res.ok){
     const msg = (data && (data.error||data.detalle)) || ('Error '+res.status);
     const e = new Error(msg);
+    e._data = data;
+    e.status = res.status;
+    throw e;
+  }
+  // Si la respuesta no es JSON válido, forzar error para que el caller haga fallback offline
+  if (!ct.includes('application/json') || data===null || (typeof data !== 'object')){
+    const e = new Error('Respuesta no JSON');
     e._data = data;
     e.status = res.status;
     throw e;
@@ -80,7 +94,7 @@ async function reloadProductsFromServer(){
   } catch(err){
     console.warn('[productos] fallo recarga', err.message);
     showToast('Error recargando productos');
-    if(/conectar a la base de datos/i.test(err.message||'')){
+    if(/conectar a la base de datos|no json|405|404|500/i.test(err.message||'') || (err && (err.status===405 || err.status===404 || err.status>=500)) ){
       console.warn('[CalzadoOxlaj] Desactivando modo servidor por fallo de BD. Usando offline.');
       window.__FORCED_OFFLINE = true;
       // Re-render usando datos locales
@@ -102,7 +116,9 @@ async function reloadCartFromServer(){
     renderCart();
   } catch(err){
     console.warn('[cart] fallo recarga', err.message);
-    if(/conectar a la base de datos/i.test(err.message||'')) window.__FORCED_OFFLINE = true;
+    if(/conectar a la base de datos|no json|405|404|500/i.test(err.message||'') || (err && (err.status===405 || err.status===404 || err.status>=500)) ){
+      window.__FORCED_OFFLINE = true;
+    }
   }
 }
 
@@ -335,7 +351,9 @@ async function addToCart(prod) {
       const card = document.querySelector(`.product[data-id='${prod.id}']`);
       const sel = card?.querySelector('[data-size]');
       const talla = sel ? String(sel.value) : '';
-      await serverJSON('api/cart.php', { method:'POST', body:{ id: prod.id, talla } });
+      const colorSel = card?.querySelector('[data-color]');
+      const color = colorSel ? String(colorSel.value) : '';
+      await serverJSON('api/cart.php', { method:'POST', body:{ id: prod.id, talla, color } });
       await reloadCartFromServer();
       showToast('Producto agregado');
     } catch(err){ showToast('Error carrito'); console.warn(err); }
@@ -344,23 +362,26 @@ async function addToCart(prod) {
   const card = document.querySelector(`.product[data-id='${prod.id}']`);
   const sel = card?.querySelector('[data-size]');
   const talla = sel ? String(sel.value) : '';
-  const idx = cart.findIndex(i => i.id === prod.id && i.size === talla);
-  if (idx >= 0) cart[idx].qty += 1; else cart.push({ id: prod.id, title: prod.title, price: prod.price, img: prod.img, size: talla, qty: 1 });
+  const colorSel = card?.querySelector('[data-color]');
+  const color = colorSel ? String(colorSel.value) : '';
+  const idx = cart.findIndex(i => i.id === prod.id && i.size === talla && String(i.color||'')===String(color||''));
+  if (idx >= 0) cart[idx].qty += 1; else cart.push({ id: prod.id, title: prod.title, price: prod.price, img: prod.img, size: talla, color, qty: 1 });
   saveCart(); updateCartBadge(); renderCart(); showToast('Producto agregado al carrito');
 }
-async function removeFromCart(id, size='') {
+async function removeFromCart(id, size='', color='') {
   if (USE_SERVER){
-    try { await serverJSON('api/cart.php?id='+encodeURIComponent(id)+'&talla='+encodeURIComponent(size), { method:'DELETE' }); await reloadCartFromServer(); } catch(err){ showToast('Error carrito'); }
+    try { await serverJSON('api/cart.php?id='+encodeURIComponent(id)+'&talla='+encodeURIComponent(size)+'&color='+encodeURIComponent(color), { method:'DELETE' }); await reloadCartFromServer(); } catch(err){ showToast('Error carrito'); }
     return;
   }
-  cart = cart.filter(i => !(i.id === id && String(i.size||'')===String(size))); saveCart(); updateCartBadge(); renderCart();
+  cart = cart.filter(i => !(i.id === id && String(i.size||'')===String(size) && String(i.color||'')===String(color)));
+  saveCart(); updateCartBadge(); renderCart();
 }
-async function setQty(id, qty, size='') {
+async function setQty(id, qty, size='', color='') {
   if (USE_SERVER){
-    try { await serverJSON('api/cart.php', { method:'PUT', body:{ id, talla: size, qty: Math.max(1, qty) } }); await reloadCartFromServer(); } catch(err){ showToast('Error cantidad'); }
+    try { await serverJSON('api/cart.php', { method:'PUT', body:{ id, talla: size, color, qty: Math.max(1, qty) } }); await reloadCartFromServer(); } catch(err){ showToast('Error cantidad'); }
     return;
   }
-  const it = cart.find(i => i.id === id && String(i.size||'')===String(size)); if (!it) return; it.qty = Math.max(1, qty); saveCart(); updateCartBadge(); renderCart();
+  const it = cart.find(i => i.id === id && String(i.size||'')===String(size) && String(i.color||'')===String(color)); if (!it) return; it.qty = Math.max(1, qty); saveCart(); updateCartBadge(); renderCart();
 }
 function renderCart() {
   if (!cartList || !cartEmpty || !cartTotalEl) return;
@@ -381,13 +402,13 @@ function renderCart() {
       <img class="cart__img" src="${it.img}" alt="${it.title}">
       <div>
         <div class="cart__title">${it.title}</div>
-        <div class="cart__price">Talla: ${it.size||'-'} · ${formatPrice(it.price)} · Subtotal: ${formatPrice(sub)}</div>
-        <button class="cart__remove" data-role="remove" data-id="${it.id}" data-size="${it.size||''}">Quitar</button>
+        <div class="cart__price">Talla: ${it.size||'-'} · Color: ${it.color||'-'} · ${formatPrice(it.price)} · Subtotal: ${formatPrice(sub)}</div>
+        <button class="cart__remove" data-role="remove" data-id="${it.id}" data-size="${it.size||''}" data-color="${it.color||''}">Quitar</button>
       </div>
       <div class="cart__controls">
-        <button class="cart__btn" data-role="dec" data-id="${it.id}" data-size="${it.size||''}">−</button>
+        <button class="cart__btn" data-role="dec" data-id="${it.id}" data-size="${it.size||''}" data-color="${it.color||''}">−</button>
         <span class="cart__qty">${it.qty}</span>
-        <button class="cart__btn" data-role="inc" data-id="${it.id}" data-size="${it.size||''}">+</button>
+        <button class="cart__btn" data-role="inc" data-id="${it.id}" data-size="${it.size||''}" data-color="${it.color||''}">+</button>
       </div>`;
     cartList.appendChild(li);
   });
@@ -398,13 +419,14 @@ cartList?.addEventListener('click', (e) => {
   if (!btn) return;
   const id = Number(btn.getAttribute('data-id'));
   const size = String(btn.getAttribute('data-size')||'');
+  const color = String(btn.getAttribute('data-color')||'');
   const role = btn.getAttribute('data-role');
   if (role === 'inc') {
-    const it = cart.find(i => i.id === id && (String(i.size||'')===size)); if (!it) return; setQty(id, it.qty + 1, size);
+    const it = cart.find(i => i.id === id && (String(i.size||'')===size) && (String(i.color||'')===color)); if (!it) return; setQty(id, it.qty + 1, size, color);
   } else if (role === 'dec') {
-    const it = cart.find(i => i.id === id && (String(i.size||'')===size)); if (!it) return; setQty(id, Math.max(1, it.qty - 1), size);
+    const it = cart.find(i => i.id === id && (String(i.size||'')===size) && (String(i.color||'')===color)); if (!it) return; setQty(id, Math.max(1, it.qty - 1), size, color);
   } else if (role === 'remove') {
-    removeFromCart(id, size);
+    removeFromCart(id, size, color);
   }
 });
 
