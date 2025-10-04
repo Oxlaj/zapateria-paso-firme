@@ -55,6 +55,12 @@ if(location.protocol==='file:'){
 // --- Helpers de red (modo servidor) ---
 async function serverJSON(url, options={}){
   const opt = { headers: { 'Content-Type':'application/json' }, credentials:'include', ...options};
+  // Method override for hostings that block PUT/DELETE
+  const origMethod = (opt.method || 'GET').toUpperCase();
+  if (origMethod === 'PUT' || origMethod === 'DELETE' || origMethod === 'PATCH'){
+    opt.headers = { ...(opt.headers||{}), 'X-HTTP-Method-Override': origMethod };
+    opt.method = 'POST';
+  }
   if (opt.body && typeof opt.body !== 'string') opt.body = JSON.stringify(opt.body);
   const res = await fetch(url, opt);
   const ct = (res.headers.get('content-type')||'').toLowerCase();

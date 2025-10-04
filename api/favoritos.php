@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/config.php';
 $pdo = db();
-$method = $_SERVER['REQUEST_METHOD'];
+$method = request_method();
 
 // Requiere usuario autenticado para asociar favoritos (usa session user id)
 $u = current_user();

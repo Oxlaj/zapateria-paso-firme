@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/config.php';
 $pdo = db();
-$method = $_SERVER['REQUEST_METHOD'];
+$method = request_method();
 
 // Asegura existencia de tablas base involucradas
 ensure_table('carrito');

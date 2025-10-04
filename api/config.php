@@ -64,6 +64,20 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 function current_user(){ return $_SESSION['user'] ?? null; }
 function require_role($role){ $u=current_user(); if(!$u || $u['rol']!==$role){ json_response(['error'=>'No autorizado'],401);} }
 
+// Método de request con soporte para override (para hostings que bloquean PUT/DELETE)
+function request_method(){
+    $m = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    if ($m === 'POST'){
+        $override = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE']
+            ?? ($_POST['_method'] ?? $_GET['_method'] ?? null);
+        if ($override){
+            $om = strtoupper($override);
+            if (in_array($om, ['GET','POST','PUT','PATCH','DELETE'], true)) return $om;
+        }
+    }
+    return $m;
+}
+
 // Función auxiliar para validar que la tabla exista (opcional en endpoints)
 function ensure_table($name){
     $pdo = db();

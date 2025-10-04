@@ -2,7 +2,7 @@
 require __DIR__ . '/config.php';
 require __DIR__ . '/db_tags.php';
 $pdo = db();
-$method = $_SERVER['REQUEST_METHOD'];
+$method = request_method();
 
 require_role('admin');
 
