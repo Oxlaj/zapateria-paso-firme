@@ -77,6 +77,16 @@
           <label class="role-card" style="display:flex;align-items:center;gap:.75rem;padding:.9rem .95rem;border:1.5px solid #d2dae3;border-radius:14px;cursor:pointer;transition:.25s;background:#fff;font-weight:600;font-size:.9rem">
             <input type="radio" name="rol" value="admin" style="margin:0" /> ADMINISTRADOR
           </label>
+          <label id="registerCard" class="role-card" style="display:flex;align-items:center;gap:.75rem;padding:.9rem .95rem;border:1.5px solid #d2dae3;border-radius:14px;cursor:pointer;transition:.25s;background:#fff;font-weight:600;font-size:.9rem">
+            REGISTRARTE
+          </label>
+        </div>
+        <div id="clientNameRow" style="display:grid;gap:.5rem;margin-bottom:.75rem">
+          <label style="font-size:.7rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#334">Nombre de usuario
+            <div style="display:flex;align-items:center;gap:.5rem;margin-top:.35rem">
+              <input id="roleUserName" type="text" placeholder="Ingresa tu nombre" style="flex:1;padding:.55rem .7rem;border:1.5px solid #c7d1dc;border-radius:8px;font-size:.8rem"/>
+            </div>
+          </label>
         </div>
         <div style="display:grid;gap:.5rem;margin-bottom:.75rem">
           <label style="font-size:.7rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#334">Contraseña
@@ -87,12 +97,12 @@
           </label>
           <small id="pwError" style="color:#c0392b;font-size:.65rem;min-height:1em"></small>
         </div>
-  <div id="roleDebug" style="font-size:.6rem;letter-spacing:.5px;color:#666;margin:0 0 .25rem;text-align:center">rol:? (sin seleccionar)</div>
-  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
-          <button type="submit" class="btn btn--primary" style="flex:1 1 140px">Entrar</button>
-          <button type="button" class="btn btn--outline" id="cancelLogin" style="flex:1 1 120px" onclick="document.getElementById('roleOverlay').hidden=true;document.getElementById('roleOverlay').style.display='none';">Cancelar</button>
+        
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:.75rem">
+          <button type="submit" class="btn btn--primary" style="flex:0 0 auto;min-width:140px">Entrar</button>
         </div>
-  <p style="margin:.85rem 0 0;font-size:.65rem;opacity:.65;text-align:center">Contraseñas demo: cliente123 / admin123</p>
+        
+        <p style="margin:.6rem 0 0;font-size:.65rem;opacity:.65;text-align:center">Contraseñas demo: cliente123 / admin123</p>
       </form>
     </div>
   </div>

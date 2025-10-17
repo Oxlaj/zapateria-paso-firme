@@ -82,6 +82,7 @@ Diagnóstico rápido BD: visitar `api/test_db.php` mostrará conexión, tablas p
 |---------|-----------|----------|-------------|
 | Productos | GET | `api/products.php` | Lista productos + tags |
 | CRUD Productos | POST / PUT / DELETE | `api/admin_products.php` | Administrar productos (admin) |
+| Métricas Dashboard | GET | `api/admin_metrics.php` | Indicadores agregados (ventas, carrito, productos, usuarios, favoritos) — solo admin |
 | Carrito | GET / POST / PUT / DELETE | `api/cart.php` | Estado y operaciones de carrito |
 | Favoritos | GET / POST / DELETE | `api/favoritos.php` | Gestiona favoritos del usuario |
 | Testimonios | GET | `api/testimonios.php` | Lista testimonios |
@@ -96,6 +97,11 @@ Diagnóstico rápido BD: visitar `api/test_db.php` mostrará conexión, tablas p
     - Squoosh (web) o `cwebp`: `cwebp -q 82 portada.jpg -o portada.webp`
     - `avifenc`: `avifenc --min 30 --max 35 portada.jpg portada.avif`
     Coloca los archivos en `assets/img/` junto al original.
+
+## Dashboard de administrador
+- Acceso: botón “Dashboard” en la navegación (visible sólo para rol admin). Si hay sesión admin en el servidor, abre `dashboard.php` (protegido). En modo offline apunta a `panel/dashboard.html` como visor local.
+- Se puede filtrar por rango de fechas y actualizar en vivo.
+- KPIs: ingresos y pedidos, estado del carrito global, conteo de productos (con/sin imagen), distribución de usuarios, top favoritos y top ventas.
 
 ## Despliegue
 - Estático (Netlify / GitHub Pages): usar `USE_SERVER=false`.

@@ -63,27 +63,20 @@ async function serverJSON(url, options={}){
   }
   if (opt.body && typeof opt.body !== 'string') opt.body = JSON.stringify(opt.body);
   const res = await fetch(url, opt);
-  const ct = (res.headers.get('content-type')||'').toLowerCase();
+  const raw = await res.text();
   let data = null;
-  if (ct.includes('application/json')) {
-    try { data = await res.json(); } catch { data = null; }
-  } else {
-    // Intento de parseo por si el servidor no envió header correcto
-    try { data = await res.json(); } catch { data = null; }
-  }
+  try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
   if(!res.ok){
-    const msg = (data && (data.error||data.detalle)) || ('Error '+res.status);
+    const msg = (data && (data.error||data.detalle)) || (`Error ${res.status}`);
     const e = new Error(msg);
-    e._data = data;
+    e._data = data || { raw: raw?.slice(0,300) };
     e.status = res.status;
     throw e;
   }
-  // Si la respuesta no es JSON válido, forzar error para que el caller haga fallback offline
-  if (!ct.includes('application/json') || data===null || (typeof data !== 'object')){
-    const e = new Error('Respuesta no JSON');
-    e._data = data;
-    e.status = res.status;
-    throw e;
+  // Si respuesta 200 pero no JSON válido, tolerar: si cuerpo vacío -> {}, si no -> objeto stub con _raw
+  if (data===null || (typeof data !== 'object')){
+    if (!raw || !raw.trim()) return {};
+    return { _raw: raw.slice(0, 300) };
   }
   return data;
 }
@@ -557,6 +550,18 @@ const rolePasswordInput = document.getElementById('rolePassword');
 // Campo correo eliminado (login simplificado sólo contraseña)
 const pwError = document.getElementById('pwError');
 const pwToggle = document.getElementById('pwToggle');
+// Nuevo: soporte de login de cliente con nombre de usuario
+const roleUserNameInput = document.getElementById('roleUserName');
+const clientNameRowEl = document.getElementById('clientNameRow');
+const registerCardEl = document.getElementById('registerCard');
+
+function updateLoginFieldsVisibility(){
+  try{
+    const checked = document.querySelector("input[name='rol']:checked");
+    const selRole = checked ? checked.value : 'cliente';
+    if(clientNameRowEl){ clientNameRowEl.style.display = (selRole==='cliente') ? 'grid' : 'none'; }
+  }catch(e){}
+}
 
 
 function showSite(show){
@@ -577,6 +582,7 @@ function showLogin(){
   const current = getRole();
   const radios = $$('input[name="rol"]', roleOverlay||document);
   if (current && radios.length){ radios.forEach(r=>{ r.checked = (r.value === current); }); }
+  updateLoginFieldsVisibility();
 }
 function afterLogin(role){
   if (roleOverlay) {
@@ -599,24 +605,32 @@ function afterLogin(role){
   setupRoleUI();
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{
-  const role = getRole();
-  if (!role) { showLogin(); }
-  else { afterLogin(role); }
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const params = new URLSearchParams(location.search);
+  const forceLogin = params.get('login') === '1';
+  if (forceLogin){
+    // Cerrar sesión servidor y limpiar rol local para evitar acceso directo
+    if(serverActive()) { try { await logoutServer(); } catch(e){} }
+    clearRole();
+    showLogin();
+    updateLoginFieldsVisibility();
+    // Limpiar parámetro de la URL
+    try { history.replaceState({}, '', location.pathname); } catch(e){}
+  } else {
+    const role = getRole();
+    if (!role) { showLogin(); }
+    else { afterLogin(role); }
+  }
 
   // Asegurar selección manual por si algún estilo bloquea el label
   $$('.role-card').forEach(card=>{
     card.addEventListener('click', ()=>{
       const inp = card.querySelector('input[name="rol"]');
       if (inp) { inp.checked = true; }
-        const dbg = document.getElementById('roleDebug');
-        if(dbg){
-          const sel = document.querySelector("input[name='rol']:checked");
-          dbg.textContent = 'rol seleccionado: ' + (sel? sel.value : 'ninguno');
-        }
         // Toggle clase visual rápida sin depender de :has (compatibilidad y rendimiento)
         $$('.role-card').forEach(c=>c.classList.remove('selected'));
         card.classList.add('selected');
+        updateLoginFieldsVisibility();
     });
   });
   // nada adicional específico al cargar si es admin (CRUD inline se inyecta al renderizar)
@@ -624,28 +638,45 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 
+// Click en tarjeta "REGISTRARTE"
+registerCardEl?.addEventListener('click', ()=>{
+  window.location.href = 'registro.html';
+});
+
 loginForm?.addEventListener('submit', async (e)=>{
   e.preventDefault();
   pwError && (pwError.textContent='');
+  const checked = document.querySelector("input[name='rol']:checked");
+  const selRole = checked ? checked.value : 'cliente';
+  const userName = roleUserNameInput ? roleUserNameInput.value.trim() : '';
   const enteredPw = rolePasswordInput ? rolePasswordInput.value.trim() : '';
+  if (selRole === 'cliente' && !userName){ pwError && (pwError.textContent='Ingresa tu nombre'); return; }
   if (!enteredPw){ pwError && (pwError.textContent='Ingresa la contraseña'); return; }
 
   if(serverActive()){
     try {
-      const checked = document.querySelector("input[name='rol']:checked");
-      const selRole = checked ? checked.value : null;
-      await loginServerPassword(enteredPw, selRole);
-      const r = getRole() || 'cliente';
-      afterLogin(r);
-      rolePasswordInput && (rolePasswordInput.value='');
-      return;
+      if(selRole === 'cliente'){
+        const d = await serverJSON('api/auth.php',{ method:'POST', body:{ nombre: userName, password: enteredPw } });
+        __currentUser = d.user || null;
+        if(__currentUser){ setRole(__currentUser.rol || 'cliente'); }
+        afterLogin('cliente');
+        rolePasswordInput && (rolePasswordInput.value='');
+        roleUserNameInput && (roleUserNameInput.value='');
+        return;
+      } else {
+        await loginServerPassword(enteredPw, selRole);
+        const r = getRole() || 'cliente';
+        afterLogin(r);
+        rolePasswordInput && (rolePasswordInput.value='');
+        return;
+      }
     } catch(err){
       console.warn('Fallo login servidor', err.message);
       // Distinguir credencial inválida (401) de fallo real de servidor/red.
       const msg = (err && err.message)||'';
-      if(/contraseñ|credencial|inválida|invalid/i.test(msg)){
+      if(/contraseñ|credencial|inválida|invalid|usuario|nombre/i.test(msg)){
         // No forzamos offline, sólo mostrar error en el formulario.
-        pwError && (pwError.textContent='Contraseña incorrecta');
+        pwError && (pwError.textContent='Credenciales incorrectas');
         return; // no continuar a fallback local todavía
       }
       // Errores de conexión / otros -> fallback offline
@@ -654,8 +685,7 @@ loginForm?.addEventListener('submit', async (e)=>{
     }
   }
   // Fallback / modo offline
-  const checked = document.querySelector("input[name='rol']:checked");
-  let role = checked ? checked.value : 'cliente';
+  let role = selRole || 'cliente';
   if(!ROLE_PASSWORDS[role]) role='cliente';
   const expected = ROLE_PASSWORDS[role];
   if (enteredPw !== expected) { pwError && (pwError.textContent='Contraseña incorrecta'); return; }
@@ -674,6 +704,8 @@ pwToggle?.addEventListener('click', ()=>{
   rolePasswordInput.setAttribute('type', t);
   pwToggle.textContent = t==='password' ? '👁' : '🙈';
 });
+
+// (Registro: ahora es una página aparte registro.html)
 
 // Ajustes UI dinámicos según modo servidor/offline
 // (sin cambios adicionales para servidor)

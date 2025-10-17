@@ -108,6 +108,26 @@ CREATE TABLE IF NOT EXISTS pedido_items (
 );
 
 -- ----------------------------
+-- Compras a proveedores (para métricas de compras)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `compras` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `proveedor` VARCHAR(160) NULL,
+  `total` DECIMAL(10,2) DEFAULT 0,
+  `creado_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS `compra_items` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `compra_id` INT UNSIGNED NOT NULL,
+  `producto_id` INT UNSIGNED NOT NULL,
+  `cantidad` INT NOT NULL,
+  `costo` DECIMAL(10,2) NOT NULL,
+  KEY `idx_ci_compra` (`compra_id`),
+  KEY `idx_ci_producto` (`producto_id`)
+);
+
+-- ----------------------------
 -- Datos iniciales
 -- ----------------------------
 INSERT IGNORE INTO productos (id,titulo,precio,imagen) VALUES

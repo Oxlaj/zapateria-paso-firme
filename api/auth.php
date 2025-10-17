@@ -11,9 +11,13 @@ if ($method === 'GET') {
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
 if ($method === 'POST') {
-  // Nuevo modo: acepta rol + password fija (cliente123 / admin123) o sigue permitiendo password hash si solo se envía password.
+  // Modos soportados:
+  // 1) role + password fija (cliente123 / admin123)
+  // 2) login por password hash, opcionalmente con nombre/correo
   $role = isset($input['role']) ? strtolower((string)$input['role']) : null;
   $pass = (string)($input['password'] ?? '');
+  $nombre = isset($input['nombre']) ? trim((string)$input['nombre']) : null;
+  $correo = isset($input['correo']) ? trim((string)$input['correo']) : null;
   if ($pass === '') json_response(['error'=>'Contraseña requerida'], 400);
 
   $fixed = [ 'cliente'=>'cliente123', 'admin'=>'admin123' ];
@@ -32,7 +36,21 @@ if ($method === 'POST') {
     json_response(['ok'=>true,'user'=>$_SESSION['user'],'mode'=>'fixed-role']);
   }
 
-  // Compatibilidad: si no se envía role, seguir modo password-hash (recorre usuarios)
+  // Modo: nombre/correo + password hash
+  if ($nombre || $correo){
+    $stmt = null; $val = null;
+    if ($nombre){ $stmt = $pdo->prepare('SELECT id,nombre,correo,password_hash,rol FROM usuarios WHERE nombre=? LIMIT 1'); $val = $nombre; }
+    else { $stmt = $pdo->prepare('SELECT id,nombre,correo,password_hash,rol FROM usuarios WHERE correo=? LIMIT 1'); $val = $correo; }
+    $stmt->execute([$val]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if($row && password_verify($pass, $row['password_hash'])){
+      $_SESSION['user'] = ['id'=>$row['id'],'nombre'=>$row['nombre'],'correo'=>$row['correo'],'rol'=>$row['rol']];
+      json_response(['ok'=>true,'user'=>$_SESSION['user'],'mode'=>'user-pass']);
+    }
+    json_response(['error'=>'Credenciales inválidas'],401);
+  }
+
+  // Compatibilidad: si no se envía role ni nombre/correo, seguir modo password-hash global (recorre usuarios)
   $stmt = $pdo->query('SELECT id,nombre,correo,password_hash,rol FROM usuarios ORDER BY id');
   while($row = $stmt->fetch(PDO::FETCH_ASSOC)){
     if(password_verify($pass, $row['password_hash'])){ $_SESSION['user'] = ['id'=>$row['id'],'nombre'=>$row['nombre'],'correo'=>$row['correo'],'rol'=>$row['rol']]; json_response(['ok'=>true,'user'=>$_SESSION['user'],'mode'=>'hash']); }
