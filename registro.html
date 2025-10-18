@@ -67,8 +67,8 @@
       if(password.length < 6){ err.textContent='La contraseña debe tener al menos 6 caracteres'; return; }
       try {
         const resp = await serverJSON('api/register.php',{ method:'POST', body:{ nombre, correo, password } });
-  ok.textContent = 'Cuenta creada. Redirigiendo al login...';
-  setTimeout(()=>{ window.location.href = 'index.html?login=1'; }, 1200);
+        ok.textContent = 'Cuenta creada. Redirigiendo al login...';
+        setTimeout(()=>{ window.location.href = 'index.html?login=1'; }, 1200);
       } catch(ex){ err.textContent = ex._data?.error || ex.message || 'Error registrando'; }
     });
   </script>

@@ -1,0 +1,17 @@
+{
+  "name": "Calzado Oxlaj",
+  "short_name": "Oxlaj",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0D1B2A",
+  "description": "Catálogo, carrito y contacto de Calzado Oxlaj.",
+  "icons": [
+    {
+      "src": "assets/img/logo-oxlaj.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

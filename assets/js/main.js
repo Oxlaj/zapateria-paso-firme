@@ -1020,6 +1020,17 @@ newCheckoutBtn?.addEventListener('click', ()=>{
   openCheckout();
 });
 
+// Utilidad: mostrar notificación local (si hay permiso y SW registrado)
+async function showLocalNotification(title, options){
+  try{
+    if(!('Notification' in window)) return;
+    if(Notification.permission !== 'granted') return;
+    const reg = await navigator.serviceWorker.getRegistration();
+    if(reg && reg.active){ reg.active.postMessage({ type:'showLocalNotification', title, options }); }
+    else { new Notification(title, options||{}); }
+  }catch(e){ /* noop */ }
+}
+
 function ensureCheckout(){
   if(document.getElementById('checkoutOverlay')) return;
   const ov = document.createElement('div');
