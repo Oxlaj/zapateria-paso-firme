@@ -15,7 +15,7 @@ function clearRole(){ try{ localStorage.removeItem(ROLE_KEY);}catch(e){} }
 let __currentUser = null; // {id,nombre,correo,rol} o null
 async function fetchSession(){
   try {
-    const d = await serverJSON('api/auth.php',{method:'GET'});
+    const d = await serverJSON('api/session.php',{method:'GET'});
     __currentUser = d.user || null;
     if(__currentUser){ setRole(__currentUser.rol || 'cliente'); }
     return __currentUser;
@@ -23,13 +23,13 @@ async function fetchSession(){
 }
 async function loginServerPassword(pass, role){
   const body = role ? { password: pass, role } : { password: pass };
-  const d = await serverJSON('api/auth.php',{method:'POST', body});
+  const d = await serverJSON('api/session.php',{method:'POST', body});
   __currentUser = d.user || null;
   if(__currentUser){ setRole(__currentUser.rol || 'cliente'); }
   return __currentUser;
 }
 async function logoutServer(){
-  try { await serverJSON('api/auth.php',{method:'DELETE'}); } catch(e){}
+  try { await serverJSON('api/session.php',{method:'DELETE'}); } catch(e){}
   __currentUser = null; clearRole();
 }
 // Utilidades
@@ -54,7 +54,11 @@ if(location.protocol==='file:'){
 
 // --- Helpers de red (modo servidor) ---
 async function serverJSON(url, options={}){
-  const opt = { headers: { 'Content-Type':'application/json' }, credentials:'include', ...options};
+  const opt = { credentials:'include', ...options};
+  // Solo enviar Content-Type JSON cuando hay cuerpo
+  if (opt.body !== undefined) {
+    opt.headers = { ...(opt.headers||{}), 'Content-Type':'application/json' };
+  }
   // Method override for hostings that block PUT/DELETE
   const origMethod = (opt.method || 'GET').toUpperCase();
   if (origMethod === 'PUT' || origMethod === 'DELETE' || origMethod === 'PATCH'){
@@ -550,17 +554,14 @@ const rolePasswordInput = document.getElementById('rolePassword');
 // Campo correo eliminado (login simplificado sólo contraseña)
 const pwError = document.getElementById('pwError');
 const pwToggle = document.getElementById('pwToggle');
-// Nuevo: soporte de login de cliente con nombre de usuario
-const roleUserNameInput = document.getElementById('roleUserName');
+// Login simplificado: solo rol (cliente/admin) + contraseña
+const roleUserNameInput = null; // deshabilitado
 const clientNameRowEl = document.getElementById('clientNameRow');
 const registerCardEl = document.getElementById('registerCard');
 
 function updateLoginFieldsVisibility(){
-  try{
-    const checked = document.querySelector("input[name='rol']:checked");
-    const selRole = checked ? checked.value : 'cliente';
-    if(clientNameRowEl){ clientNameRowEl.style.display = (selRole==='cliente') ? 'grid' : 'none'; }
-  }catch(e){}
+  // Siempre ocultar el campo de nombre de usuario (login original)
+  try{ if(clientNameRowEl){ clientNameRowEl.style.display = 'none'; } }catch(e){}
 }
 
 
@@ -639,37 +640,25 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 navLogin?.addEventListener('click', (e)=>{ e.preventDefault(); showLogin(); });
 
 // Click en tarjeta "REGISTRARTE"
-registerCardEl?.addEventListener('click', ()=>{
-  window.location.href = 'registro.html';
-});
+// Deshabilitar tarjeta de registro en el login original
+if(registerCardEl){ registerCardEl.style.display = 'none'; }
 
 loginForm?.addEventListener('submit', async (e)=>{
   e.preventDefault();
   pwError && (pwError.textContent='');
   const checked = document.querySelector("input[name='rol']:checked");
   const selRole = checked ? checked.value : 'cliente';
-  const userName = roleUserNameInput ? roleUserNameInput.value.trim() : '';
   const enteredPw = rolePasswordInput ? rolePasswordInput.value.trim() : '';
-  if (selRole === 'cliente' && !userName){ pwError && (pwError.textContent='Ingresa tu nombre'); return; }
   if (!enteredPw){ pwError && (pwError.textContent='Ingresa la contraseña'); return; }
 
   if(serverActive()){
     try {
-      if(selRole === 'cliente'){
-        const d = await serverJSON('api/auth.php',{ method:'POST', body:{ nombre: userName, password: enteredPw } });
-        __currentUser = d.user || null;
-        if(__currentUser){ setRole(__currentUser.rol || 'cliente'); }
-        afterLogin('cliente');
-        rolePasswordInput && (rolePasswordInput.value='');
-        roleUserNameInput && (roleUserNameInput.value='');
-        return;
-      } else {
-        await loginServerPassword(enteredPw, selRole);
-        const r = getRole() || 'cliente';
-        afterLogin(r);
-        rolePasswordInput && (rolePasswordInput.value='');
-        return;
-      }
+      // Login original: ambos roles por contraseña fija o hash
+      await loginServerPassword(enteredPw, selRole);
+      const r = getRole() || selRole || 'cliente';
+      afterLogin(r);
+      rolePasswordInput && (rolePasswordInput.value='');
+      return;
     } catch(err){
       console.warn('Fallo login servidor', err.message);
       // Distinguir credencial inválida (401) de fallo real de servidor/red.
